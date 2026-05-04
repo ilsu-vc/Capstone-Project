@@ -1,0 +1,8 @@
+{
+  "name": "ActivePro Integrated System",
+  "description": "ITIL 4-grounded Integrated Inventory and Financial Reporting System for ActivePro Marketing Corporation, featuring multi-warehouse sync, QR catalog, and automated P&L reporting.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": []
+}

@@ -1,0 +1,470 @@
+import React, { useState, useEffect } from 'react';
+import { db } from '../lib/firebase';
+import { collection, onSnapshot, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { Product, InventoryItem, Warehouse } from '../types';
+import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Search, Plus, QrCode, Filter, Package, Warehouse as WarehouseIcon } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuth } from '../hooks/useAuth';
+import { toast } from 'sonner';
+
+export function Inventory() {
+  const { profile } = useAuth();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isStockUpdateOpen, setIsStockUpdateOpen] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'secretary';
+
+  useEffect(() => {
+    const unsubProducts = onSnapshot(collection(db, 'products'), (snap) => {
+      setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'products');
+    });
+    const unsubInventory = onSnapshot(collection(db, 'inventory'), (snap) => {
+      setInventory(snap.docs.map(d => ({ id: d.id, ...d.data() } as InventoryItem)));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'inventory');
+    });
+    const unsubWarehouses = onSnapshot(collection(db, 'warehouses'), (snap) => {
+      setWarehouses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Warehouse)));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'warehouses');
+    });
+
+    return () => {
+      unsubProducts();
+      unsubInventory();
+      unsubWarehouses();
+    };
+  }, []);
+
+  const handleAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const newProduct = {
+      sku: formData.get('sku'),
+      name: formData.get('name'),
+      category: formData.get('category'),
+      basePrice: Number(formData.get('basePrice')),
+      wholesalePrice: Number(formData.get('wholesalePrice')),
+      dealerPrice: Number(formData.get('dealerPrice')),
+      minStockLevel: Number(formData.get('minStockLevel')),
+      reorderPoint: Number(formData.get('reorderPoint')),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    try {
+      const docRef = await addDoc(collection(db, 'products'), newProduct);
+      // Initialize inventory for all warehouses
+      for (const wh of warehouses) {
+        await addDoc(collection(db, 'inventory'), {
+          productId: docRef.id,
+          warehouseId: wh.id,
+          quantity: 0,
+          lastUpdated: serverTimestamp()
+        });
+      }
+      setIsAddProductOpen(false);
+      toast.success('Product added to CI catalog');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, 'products');
+    }
+  };
+
+  const updateStock = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const warehouseId = formData.get('warehouseId') as string;
+    const quantity = Number(formData.get('quantity'));
+    const reason = formData.get('reason') as string;
+
+    const item = inventory.find(i => i.productId === selectedProduct?.id && i.warehouseId === warehouseId);
+    if (item && selectedProduct && profile) {
+      try {
+        // 1. Update the inventory level
+        await updateDoc(doc(db, 'inventory', item.id), {
+          quantity: item.quantity + quantity,
+          lastUpdated: serverTimestamp()
+        });
+
+        // 2. Log the adjustment for auditing
+        await addDoc(collection(db, 'stockAdjustments'), {
+          productId: selectedProduct.id,
+          warehouseId,
+          adjustmentAmount: quantity,
+          reason,
+          recordedBy: profile.uid,
+          timestamp: serverTimestamp()
+        });
+
+        setIsStockUpdateOpen(false);
+        toast.success('Inventory balance synchronized and adjustment logged');
+      } catch (err) {
+        handleFirestoreError(err, OperationType.UPDATE, `inventory/${item.id}`);
+      }
+    }
+  };
+
+  const filteredProducts = products.filter(p => 
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    p.sku.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getStockCount = (productId: string, warehouseId?: string) => {
+    const items = inventory.filter(i => i.productId === productId);
+    if (warehouseId) {
+      return items.find(i => i.warehouseId === warehouseId)?.quantity || 0;
+    }
+    return items.reduce((sum, i) => sum + i.quantity, 0);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+          <Input 
+            placeholder="Search by SKU or Name..." 
+            className="pl-9 h-10 border-zinc-200 bg-white"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {isAdmin && (
+            <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
+              <DialogTrigger className="h-10 gap-2 px-4 bg-zinc-900 text-white rounded-lg inline-flex items-center justify-center font-medium shadow-sm transition-all hover:bg-zinc-800">
+                <Plus className="w-4 h-4" /> Add Product CI
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>New Configuration Item (Product)</DialogTitle>
+                  <DialogDescription>Register a new bicycle component into the service catalog.</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleAddProduct} className="space-y-4 pt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="sku">SKU Code</Label>
+                      <Input id="sku" name="sku" required placeholder="AP-XYZ-123" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Item Name</Label>
+                      <Input id="name" name="name" required placeholder="Shimano Sora R3000" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="category">Category</Label>
+                      <Input id="category" name="category" placeholder="Groupsets" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="basePrice">Base Cost (₱)</Label>
+                      <Input id="basePrice" name="basePrice" type="number" step="0.01" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="wholesalePrice">Wholesale (₱)</Label>
+                      <Input id="wholesalePrice" name="wholesalePrice" type="number" step="0.01" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dealerPrice">Dealer (₱)</Label>
+                      <Input id="dealerPrice" name="dealerPrice" type="number" step="0.01" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="minStockLevel">Min Stock Level</Label>
+                      <Input id="minStockLevel" name="minStockLevel" type="number" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="reorderPoint">Reorder Point</Label>
+                      <Input id="reorderPoint" name="reorderPoint" type="number" required />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit" className="w-full sm:w-auto">Save to CMDB</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
+        <Table>
+          <TableHeader className="bg-zinc-50/50">
+            <TableRow>
+              <TableHead className="w-[100px] text-[10px] font-bold uppercase tracking-widest">SKU</TableHead>
+              <TableHead className="text-[10px] font-bold uppercase tracking-widest text-zinc-900">Item Details</TableHead>
+              <TableHead className="text-[10px] font-bold uppercase tracking-widest">Pricing (Base)</TableHead>
+              <TableHead className="text-[10px] font-bold uppercase tracking-widest text-center">Total Stock</TableHead>
+              <TableHead className="text-[10px] font-bold uppercase tracking-widest">Warehouse Sync</TableHead>
+              <TableHead className="text-right text-[10px] font-bold uppercase tracking-widest">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredProducts.map((p) => {
+              const totalStock = getStockCount(p.id);
+              const isLow = totalStock <= p.reorderPoint;
+              return (
+                <TableRow 
+                  key={p.id} 
+                  className="group hover:bg-zinc-50/50 transition-colors cursor-pointer"
+                  onClick={() => {
+                    setSelectedProduct(p);
+                    setIsDetailOpen(true);
+                  }}
+                >
+                  <TableCell className="font-mono text-xs text-zinc-500 font-medium">{p.sku}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-zinc-900">{p.name}</span>
+                      <span className="text-[10px] text-zinc-400 font-medium uppercase">{p.category}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-sm font-medium">₱{p.basePrice.toLocaleString()}</TableCell>
+                  <TableCell className="text-center">
+                    <Badge 
+                      variant="outline" 
+                      className={`h-6 font-bold ${isLow ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}
+                    >
+                      {totalStock} units
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-1">
+                      {warehouses.map(wh => (
+                        <div key={wh.id} className="flex items-center justify-between text-[10px] font-medium text-zinc-500">
+                          <span>{wh.name}:</span>
+                          <span className="font-bold text-zinc-700">{getStockCount(p.id, wh.id)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right space-x-1" onClick={(e) => e.stopPropagation()}>
+                    <Dialog>
+                      <DialogTrigger className="inline-flex items-center justify-center h-8 w-8 rounded-lg text-zinc-400 hover:text-zinc-900 transition-all">
+                        <QrCode className="w-4 h-4" />
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-xs text-center">
+                        <DialogHeader>
+                          <DialogTitle className="text-center">Asset QR Label</DialogTitle>
+                        </DialogHeader>
+                        <div className="flex flex-col items-center gap-4 py-8">
+                          <div className="p-4 bg-white border-2 border-zinc-900 rounded-2xl shadow-lg">
+                            <QRCodeSVG value={p.id} size={180} />
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-sm font-black">{p.name}</p>
+                            <p className="text-xs font-mono text-zinc-500">{p.sku}</p>
+                          </div>
+                        </div>
+                        <Button className="w-full gap-2" variant="outline" onClick={() => window.print()}>
+                          Print Label
+                        </Button>
+                      </DialogContent>
+                    </Dialog>
+
+                    {isAdmin && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-zinc-400 hover:text-zinc-900"
+                        onClick={() => {
+                          setSelectedProduct(p);
+                          setIsStockUpdateOpen(true);
+                        }}
+                      >
+                        <Package className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Stock Update Dialog */}
+      <Dialog open={isStockUpdateOpen} onOpenChange={setIsStockUpdateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manual Stock Adjustment</DialogTitle>
+            <DialogDescription>
+              Adjust current counts for <span className="font-bold">{selectedProduct?.name}</span>. This action will be logged for auditing.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={updateStock} className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label>Target Warehouse</Label>
+              <Select name="warehouseId" required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select warehouse..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {warehouses.map(wh => (
+                    <SelectItem key={wh.id} value={wh.id}>{wh.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Adjustment Qty</Label>
+                <Input name="quantity" type="number" required defaultValue="0" placeholder="+/- units" />
+              </div>
+              <div className="space-y-2">
+                <Label>Current System Total</Label>
+                <div className="h-10 px-3 flex items-center bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-bold">
+                  {selectedProduct ? getStockCount(selectedProduct.id) : 0} units
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reason">Adjustment Reason</Label>
+              <Input id="reason" name="reason" required placeholder="e.g., Damaged item, Physical count correction..." />
+              <p className="text-[10px] text-zinc-500 italic">Mandatory for internal audit compliance.</p>
+            </div>
+            <DialogFooter>
+              <Button type="submit" className="w-full">Commit Adjustment</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Product Detail Dialog */}
+      <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+        <DialogContent className="max-w-3xl rounded-[2rem]">
+          <DialogHeader className="pb-4 border-b border-zinc-100">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-zinc-900 rounded-xl">
+                <Package className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Configuration Item: {selectedProduct?.name}</DialogTitle>
+                <DialogDescription className="text-zinc-500 font-medium">Service catalog specification and inventory node status.</DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-6">
+            <div className="space-y-6">
+              <div>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 block">Technical Specifications</Label>
+                <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-100 space-y-3">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-zinc-500 font-medium">SKU Node</span>
+                    <span className="font-mono font-bold text-zinc-900">{selectedProduct?.sku}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-zinc-500 font-medium">Classification</span>
+                    <Badge variant="outline" className="font-black uppercase text-[9px] tracking-widest py-0 h-5">{selectedProduct?.category}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-zinc-500 font-medium">Min Threshold</span>
+                    <span className="font-bold text-zinc-900">{selectedProduct?.minStockLevel || 0} units</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-zinc-500 font-medium">Reorder Point</span>
+                    <span className="font-bold text-zinc-900">{selectedProduct?.reorderPoint || 0} units</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 block">Pricing Tiers (₱)</Label>
+                <div className="bg-zinc-900 rounded-2xl p-4 text-white space-y-3 shadow-xl shadow-zinc-200">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-zinc-400 font-medium">Base Acquisition</span>
+                    <span className="font-black">₱{selectedProduct?.basePrice.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-zinc-400 font-medium">Wholesale Rate</span>
+                    <span className="font-black text-emerald-400">₱{selectedProduct?.wholesalePrice.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-zinc-400 font-medium">Dealer Agreement</span>
+                    <span className="font-black text-blue-400">₱{selectedProduct?.dealerPrice.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 block">Warehouse Deployment</Label>
+                <div className="space-y-2">
+                  {warehouses.map(wh => {
+                    const count = getStockCount(selectedProduct?.id || '', wh.id);
+                    return (
+                      <div key={wh.id} className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-100 hover:border-zinc-300 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <WarehouseIcon className="w-4 h-4 text-zinc-400" />
+                          <span className="text-xs font-bold text-zinc-700">{wh.name}</span>
+                        </div>
+                        <Badge variant="secondary" className="font-black rounded-lg">{count} units</Badge>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-dashed border-zinc-200">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs font-black uppercase tracking-widest text-zinc-900">Aggregate Global Inventory</span>
+                  <Badge className="bg-emerald-500 font-black h-8 px-4 rounded-xl">
+                    {selectedProduct ? getStockCount(selectedProduct.id) : 0} UNITS TOTAL
+                  </Badge>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-zinc-100 rounded-xl">
+                     <QrCode className="w-8 h-8 text-zinc-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[10px] font-black uppercase text-zinc-500 mb-1">Asset Traceability</p>
+                    <p className="text-[10px] text-zinc-400 font-medium italic">Unique node ID: {selectedProduct?.id}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="pt-4 border-t border-zinc-100">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDetailOpen(false)}
+              className="h-12 px-8 rounded-xl font-black uppercase tracking-widest text-[10px]"
+            >
+              Terminate View
+            </Button>
+            {isAdmin && (
+              <Button 
+                onClick={() => {
+                  setIsDetailOpen(false);
+                  setIsStockUpdateOpen(true);
+                }}
+                className="h-12 px-8 bg-zinc-900 text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-zinc-200"
+              >
+                Adjust Stock <Plus className="ml-2 w-3 h-3" />
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
