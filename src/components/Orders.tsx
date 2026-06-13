@@ -378,10 +378,10 @@ export function Orders() {
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold tracking-tight text-zinc-900">Service Request Queue (Orders)</h2>
         <Dialog open={isNewOrderOpen} onOpenChange={setIsNewOrderOpen}>
-          <DialogTrigger className="h-9 gap-2 px-4 bg-black text-white rounded-lg inline-flex items-center justify-center font-medium transition-all hover:bg-black/90">
+          <DialogTrigger className="h-9 gap-2 px-4 bg-[#1A2332] text-white rounded-lg inline-flex items-center justify-center font-medium transition-all hover:bg-[#1A2332]/90">
             <Plus className="w-4 h-4" /> Create B2B Order
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>B2B Order Entry Portal</DialogTitle>
               <DialogDescription>Input new customer request for multi-warehouse synchronization.</DialogDescription>
@@ -402,7 +402,7 @@ export function Orders() {
                     value={clientInfo.region} 
                     onValueChange={v => setClientInfo(prev => ({ ...prev, region: v }))}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -415,9 +415,9 @@ export function Orders() {
                 </div>
                 <div className="pt-2">
                   <Label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Available Inventory</Label>
-                  <div className="mt-2 space-y-2 max-h-[300px] overflow-y-auto border rounded-md p-2">
+                  <div className="mt-2 space-y-2 min-h-[350px] max-h-[500px] overflow-y-auto border rounded-md p-2">
                     {products.map(p => (
-                      <div key={p.id} className="flex items-center justify-between p-2 hover:bg-zinc-50 rounded border border-transparent hover:border-zinc-100 transition-all">
+                       <div key={p.id} className="flex items-center justify-between p-2 hover:bg-muted rounded border border-transparent hover:border-border transition-all">
                         <div className="min-w-0">
                           <p className="text-xs font-bold truncate">{p.name}</p>
                           <p className="text-[10px] text-zinc-500">Stock: {inventory.filter(i => i.productId === p.id).reduce((sum, i) => sum + i.quantity, 0)}</p>
@@ -431,14 +431,14 @@ export function Orders() {
                 </div>
               </div>
               
-              <div className="bg-zinc-50 rounded-xl p-4 flex flex-col border border-zinc-200">
+              <div className="bg-muted rounded-xl p-4 flex flex-col border border-border">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-900">Current Cart</h4>
                   <Badge variant="secondary" className="text-[10px]">{cart.length} SKUs</Badge>
                 </div>
                 <div className="flex-1 space-y-3 mb-4 overflow-y-auto pr-2">
                   {cart.map(item => (
-                    <div key={item.productId} className="flex items-center justify-between bg-white p-2 rounded-lg border border-zinc-200">
+                    <div key={item.productId} className="flex items-center justify-between bg-card p-2 rounded-lg border border-border">
                       <div className="min-w-0">
                         <p className="text-[11px] font-bold truncate">{item.name}</p>
                         <p className="text-[10px] text-zinc-500">₱{item.price.toLocaleString()} x {item.quantity}</p>
@@ -463,7 +463,7 @@ export function Orders() {
                     <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Grand Total</span>
                     <span className="text-xl font-black text-zinc-900">₱{cart.reduce((s, i) => s + (i.price * i.quantity), 0).toLocaleString()}</span>
                   </div>
-                  <Button className="w-full h-11 bg-zinc-900 text-white font-bold" disabled={cart.length === 0 || !clientInfo.name} onClick={submitOrder}>
+                  <Button className="w-full h-11 bg-[#1A2332] text-white font-bold" disabled={cart.length === 0 || !clientInfo.name} onClick={submitOrder}>
                     Confirm and Queue Order
                   </Button>
                 </div>
@@ -486,10 +486,10 @@ export function Orders() {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="flex items-center gap-4 border-b border-zinc-100 px-6 -mx-6">
+            <div className="flex items-center gap-4 border-b border-border px-6 -mx-6">
               <button 
                 className={`pb-3 text-xs font-black uppercase tracking-widest transition-all relative ${
-                  activeTab === 'items' ? 'text-zinc-900 border-b-2 border-zinc-900' : 'text-zinc-400 hover:text-zinc-600'
+                  activeTab === 'items' ? 'text-primary border-b-2 border-primary' : 'text-zinc-500 hover:text-foreground'
                 }`}
                 onClick={() => setActiveTab('items')}
               >
@@ -497,7 +497,7 @@ export function Orders() {
               </button>
               <button 
                 className={`pb-3 text-xs font-black uppercase tracking-widest transition-all relative ${
-                  activeTab === 'history' ? 'text-zinc-900 border-b-2 border-zinc-900' : 'text-zinc-400 hover:text-zinc-600'
+                  activeTab === 'history' ? 'text-primary border-b-2 border-primary' : 'text-zinc-500 hover:text-foreground'
                 }`}
                 onClick={() => setActiveTab('history')}
               >
@@ -508,9 +508,9 @@ export function Orders() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
               <div className="space-y-4 col-span-2">
                 {activeTab === 'items' ? (
-                  <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
+                  <div className="border rounded-lg overflow-hidden bg-card">
                     <Table>
-                      <TableHeader className="bg-zinc-50/50">
+                      <TableHeader className="bg-muted">
                         <TableRow>
                           <TableHead className="text-[10px] font-bold uppercase py-2">Item / SKU</TableHead>
                           <TableHead className="text-[10px] font-bold uppercase py-2 text-center">Qty</TableHead>
@@ -549,12 +549,12 @@ export function Orders() {
                 ) : (
                   <div className="space-y-4 pr-2 max-h-[400px] overflow-y-auto">
                     {selectedOrder?.statusHistory?.slice().reverse().map((entry, idx) => (
-                      <div key={idx} className="relative pl-6 pb-6 border-l-2 border-zinc-100 last:pb-0">
-                        <div className={`absolute left-[-9px] top-0 w-4 h-4 rounded-full border-2 border-white shadow-sm ${
+                      <div key={idx} className="relative pl-6 pb-6 border-l-2 border-border last:pb-0">
+                        <div className={`absolute left-[-9px] top-0 w-4 h-4 rounded-full border-2 border-background ${
                           entry.status === 'delivered' ? 'bg-emerald-500' : 
                           entry.status === 'pending' ? 'bg-zinc-300' : 'bg-blue-500'
                         }`} />
-                        <div className="bg-zinc-50 rounded-xl p-3 border border-zinc-100 group hover:border-zinc-300 transition-colors">
+                        <div className="bg-muted rounded-xl p-3 border border-border group hover:border-foreground/20 transition-colors">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-900">
                               {entry.status.replace('_', ' ')}
@@ -569,7 +569,7 @@ export function Orders() {
                           </div>
                           <p className="text-xs font-medium text-zinc-600 mb-2">{entry.note}</p>
                           <div className="flex items-center gap-1.5 border-t border-zinc-200/50 pt-2">
-                            <div className="w-4 h-4 bg-zinc-200 rounded-full flex items-center justify-center">
+                            <div className="w-4 h-4 bg-background rounded-full flex items-center justify-center">
                               <UserIcon className="w-2 h-2 text-zinc-500" />
                             </div>
                             <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-tight">Modified by {entry.changedBy}</span>
@@ -590,7 +590,7 @@ export function Orders() {
                 <div className="space-y-4">
                   <div className="space-y-1">
                     <p className="text-[10px] font-black uppercase tracking-tighter text-zinc-400">Client Information</p>
-                    <div className="bg-zinc-50 p-2 rounded-md border border-zinc-100">
+                    <div className="bg-muted p-2 rounded-md border border-border">
                       <p className="text-xs font-bold text-zinc-900">{selectedOrder?.clientName}</p>
                       <p className="text-[10px] text-zinc-500 font-medium">{selectedOrder?.deliveryRegion} Region</p>
                     </div>
@@ -598,7 +598,7 @@ export function Orders() {
 
                   <div className="space-y-1">
                     <p className="text-[10px] font-black uppercase tracking-tighter text-zinc-400">SLA Requirements</p>
-                    <div className="flex items-center gap-2 bg-zinc-50 p-2 rounded-md border border-zinc-100">
+                    <div className="flex items-center gap-2 bg-muted p-2 rounded-md border border-border">
                       <Calendar className="w-3 h-3 text-zinc-400" />
                       <div>
                         <p className="text-xs font-bold text-zinc-900">
@@ -613,7 +613,7 @@ export function Orders() {
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-zinc-100">
+                  <div className="pt-4 border-t border-border">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Grand Total</span>
                       <span className="text-lg font-black text-zinc-900">
@@ -629,7 +629,7 @@ export function Orders() {
                        <img 
                         src={selectedOrder.photoValidationUrl} 
                         alt="Dispatch Validation" 
-                        className="w-full h-32 object-cover rounded-lg border border-zinc-200"
+                         className="w-full h-32 object-cover rounded-lg border border-border"
                         referrerPolicy="no-referrer"
                       />
                     </div>
@@ -677,7 +677,7 @@ export function Orders() {
         </Dialog>
       </div>
 
-      <div className="flex items-center gap-2 bg-white p-3 border rounded-xl shadow-sm">
+      <div className="flex items-center gap-2 bg-card p-3 border border-border rounded-xl">
         <ShoppingCart className="w-4 h-4 text-zinc-400 ml-1" />
         <Input 
           placeholder="Filter by SKU, Order #, or Client..." 
@@ -697,9 +697,9 @@ export function Orders() {
         )}
       </div>
 
-      <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
         <Table>
-          <TableHeader className="bg-zinc-50/50">
+          <TableHeader className="bg-muted/50">
             <TableRow>
               <TableHead className="text-[10px] font-bold uppercase tracking-widest">Order ID</TableHead>
               <TableHead className="text-[10px] font-bold uppercase tracking-widest">Client Name</TableHead>
@@ -747,7 +747,7 @@ export function Orders() {
                     <Button 
                       size="icon" 
                       variant="ghost" 
-                      className="h-7 w-7 text-zinc-400 hover:text-zinc-900" 
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground" 
                       onClick={() => handleViewDetails(order)}
                       title="View Details"
                     >

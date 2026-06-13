@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { AdminPanel } from './components/AdminPanel';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { Layout } from './components/Layout';
@@ -18,6 +19,9 @@ import { Orders } from './components/Orders';
 import { Finance } from './components/Finance';
 import { Transfers } from './components/Transfers';
 import { Settings } from './components/Settings';
+import { Pricelist } from './components/Pricelist';
+import { LogisticsOptimizer } from './components/LogisticsOptimizer';
+import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from 'sonner';
 import { useEffect } from 'react';
 import { collection, getDocs, addDoc } from 'firebase/firestore';
@@ -108,6 +112,24 @@ function AppContent() {
         </ProtectedRoute>
       } />
 
+      <Route path="/logistics" element={
+        <ProtectedRoute allowedRoles={['admin', 'secretary']}>
+          <LogisticsOptimizer />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/pricelist" element={
+        <ProtectedRoute allowedRoles={['admin', 'secretary', 'agent']}>
+          <Pricelist />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/admin" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <AdminPanel />
+        </ProtectedRoute>
+      } />
+
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
@@ -116,10 +138,12 @@ function AppContent() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AppContent />
-        <Toaster position="top-right" richColors closeButton />
-      </AuthProvider>
+      <ThemeProvider defaultTheme="light">
+        <AuthProvider>
+          <AppContent />
+          <Toaster position="top-right" richColors closeButton />
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

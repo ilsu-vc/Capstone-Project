@@ -165,7 +165,7 @@ export function Finance() {
     })
     .sort((a, b) => b.value - a.value);
 
-  const PIE_COLORS = ['#18181b', '#3f3f46', '#71717a', '#a1a1aa', '#d4d4d8', '#e4e4e7'];
+  const PIE_COLORS = ['#fdd001', '#fbcc0e', '#1A2332', '#302f2f', '#7a7672', '#a0a0a0'];
 
   const handleAddExpense = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -338,59 +338,59 @@ export function Finance() {
     <div className="space-y-8">
       {/* Financial Health Summary */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border-emerald-100 bg-emerald-50/20">
+        <Card className="border-emerald-500/30 bg-emerald-50/20 dark:bg-emerald-950/20 dark:border-emerald-500/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">Total Revenue</CardTitle>
             <TrendingUp className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-black text-emerald-900 tracking-tight">₱{totalRevenue.toLocaleString()}</div>
+            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">₱{totalRevenue.toLocaleString()}</div>
             <p className="text-[10px] text-emerald-600 font-bold mt-1">Confirmed B2B Sales</p>
           </CardContent>
         </Card>
 
-        <Card className="border-red-100 bg-red-50/20">
+        <Card className="border-red-500/30 bg-red-50/20 dark:bg-red-950/20 dark:border-red-500/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-red-600">Total Operational Expenses</CardTitle>
             <TrendingDown className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-black text-red-900 tracking-tight">₱{totalExpenses.toLocaleString()}</div>
+            <div className="text-2xl font-black text-red-600 dark:text-red-400 tracking-tight">₱{totalExpenses.toLocaleString()}</div>
             <p className="text-[10px] text-red-600 font-bold mt-1">SGA & Warehouse Costs</p>
           </CardContent>
         </Card>
 
-        <Card className={`border-zinc-200 shadow-sm ${netProfit >= 0 ? 'bg-white' : 'bg-zinc-50'}`}>
+        <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Net Operational Profit</CardTitle>
-            <Wallet className="h-4 w-4 text-zinc-400" />
+            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Net Operational Profit</CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-black tracking-tight ${netProfit >= 0 ? 'text-zinc-900' : 'text-red-600'}`}>
+            <div className={`text-2xl font-black tracking-tight ${netProfit >= 0 ? 'text-foreground' : 'text-red-500'}`}>
               ₱{netProfit.toLocaleString()}
             </div>
-            <p className="text-[10px] text-zinc-500 font-bold mt-1">Current Fiscal Standing</p>
+            <p className="text-[10px] text-muted-foreground font-bold mt-1">Current Fiscal Standing</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Performance Chart */}
-      <Card className="border-zinc-200 shadow-sm bg-white overflow-hidden">
-        <CardHeader className="pb-2 border-b border-zinc-100 flex flex-row items-center justify-between">
+      <Card className="border-border bg-card overflow-hidden">
+        <CardHeader className="pb-2 border-b border-border flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-xs font-black uppercase tracking-widest text-zinc-900 flex items-center gap-2">
+            <CardTitle className="text-xs font-black uppercase tracking-widest text-foreground flex items-center gap-2">
               <BarChartIcon className="w-4 h-4" /> Financial Performance
             </CardTitle>
-            <CardDescription className="text-[10px] font-medium text-zinc-500 mt-0.5">Historical Revenue vs Operational Expenditure</CardDescription>
+            <CardDescription className="text-[10px] font-medium text-muted-foreground mt-0.5">Historical Revenue vs Operational Expenditure</CardDescription>
           </div>
           <div className="flex gap-4">
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span className="text-[10px] font-bold text-zinc-500 uppercase">Revenue</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase">Revenue</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-red-500" />
-              <span className="text-[10px] font-bold text-zinc-500 uppercase">Expenses</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase">Expenses</span>
             </div>
           </div>
         </CardHeader>
@@ -402,7 +402,7 @@ export function Finance() {
               barGap={2}
               barCategoryGap="25%"
             >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
               <XAxis 
                 dataKey="name" 
                 axisLine={false} 
@@ -417,11 +417,12 @@ export function Finance() {
                 tickFormatter={(value) => `₱${value >= 1000 ? (value / 1000) + 'k' : value}`}
               />
               <Tooltip 
-                cursor={{ fill: '#f8f8f8' }}
+                cursor={{ fill: 'rgba(253,208,1,0.06)' }}
                 contentStyle={{ 
-                  borderRadius: '12px', 
-                  border: '1px solid #e4e4e7', 
-                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                  borderRadius: '8px', 
+                  border: '1px solid #302f2f', 
+                  backgroundColor: '#1A2332',
+                  color: '#ffffff',
                   fontSize: '11px',
                   fontWeight: 'bold'
                 }}
@@ -443,29 +444,29 @@ export function Finance() {
       </Card>
 
       {/* Trajectory Chart */}
-      <Card className="border-zinc-200 shadow-sm bg-white overflow-hidden">
-        <CardHeader className="pb-2 border-b border-zinc-100 flex flex-row items-center justify-between">
+      <Card className="border-border bg-card overflow-hidden">
+        <CardHeader className="pb-2 border-b border-border flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-xs font-black uppercase tracking-widest text-zinc-900 flex items-center gap-2">
+            <CardTitle className="text-xs font-black uppercase tracking-widest text-foreground flex items-center gap-2">
               <TrendingUp className="w-4 h-4" /> Financial Trajectory (12 Months)
             </CardTitle>
-            <CardDescription className="text-[10px] font-medium text-zinc-500 mt-0.5">Annual Trend of Revenue vs Expenses</CardDescription>
+            <CardDescription className="text-[10px] font-medium text-muted-foreground mt-0.5">Annual Trend of Revenue vs Expenses</CardDescription>
           </div>
           <div className="flex gap-4">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-0.5 bg-emerald-500" />
-              <span className="text-[10px] font-bold text-zinc-500 uppercase">Revenue</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase">Revenue</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-0.5 bg-red-500" />
-              <span className="text-[10px] font-bold text-zinc-500 uppercase">Expenses</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase">Expenses</span>
             </div>
           </div>
         </CardHeader>
         <CardContent className="pt-6 h-[300px] overflow-hidden">
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={chartData12Months} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
               <XAxis 
                 dataKey="name" 
                 axisLine={false} 
@@ -481,9 +482,10 @@ export function Finance() {
               />
               <Tooltip 
                 contentStyle={{ 
-                  borderRadius: '12px', 
-                  border: '1px solid #e4e4e7', 
-                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                  borderRadius: '8px', 
+                  border: '1px solid #302f2f', 
+                  backgroundColor: '#1A2332',
+                  color: '#ffffff',
                   fontSize: '11px',
                   fontWeight: 'bold'
                 }}
@@ -514,7 +516,7 @@ export function Finance() {
         {/* Profit & Loss Detailed Table */}
         <div className="flex-1 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-900">Profit & Loss Ledger</h3>
+            <h3 className="text-sm font-bold uppercase tracking-widest text-foreground">Profit & Loss Ledger</h3>
             <div className="flex items-center gap-2">
               <Dialog open={isManageCategoriesOpen} onOpenChange={setIsManageCategoriesOpen}>
                 <DialogTrigger render={
@@ -570,23 +572,23 @@ export function Finance() {
                       </Dialog>
                     </div>
 
-                      <div className="border rounded-2xl overflow-hidden bg-white shadow-sm border-zinc-200">
+                      <div className="border rounded-2xl overflow-hidden bg-card border-border">
                         <Table>
-                          <TableHeader className="bg-zinc-50/80 border-b border-zinc-100">
+                          <TableHeader className="bg-muted/50 border-b border-border">
                             <TableRow className="hover:bg-transparent">
-                              <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 pl-6 text-zinc-400">Classification Details</TableHead>
-                              <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 text-center text-zinc-400">Current Status</TableHead>
-                              <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 pr-6 text-right text-zinc-400">Management</TableHead>
+                              <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 pl-6 text-muted-foreground">Classification Details</TableHead>
+                              <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 text-center text-muted-foreground">Current Status</TableHead>
+                              <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 pr-6 text-right text-muted-foreground">Management</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {categories.map((cat) => (
-                              <TableRow key={cat.id} className="group hover:bg-zinc-50/50 border-b border-zinc-50 last:border-0 transition-colors">
+                              <TableRow key={cat.id} className="group hover:bg-muted/30 border-b border-border last:border-0 transition-colors">
                                 <TableCell className="pl-6 py-4">
                                   <div className="flex flex-col">
-                                    <span className="text-sm font-black text-zinc-950 uppercase tracking-tight">{cat.name}</span>
+                                    <span className="text-sm font-black text-foreground uppercase tracking-tight">{cat.name}</span>
                                     {cat.description && (
-                                      <span className="text-[10px] text-zinc-500 font-medium leading-tight mt-0.5 line-clamp-1 max-w-[280px]">
+                                      <span className="text-[10px] text-muted-foreground font-medium leading-tight mt-0.5 line-clamp-1 max-w-[280px]">
                                         {cat.description}
                                       </span>
                                     )}
@@ -608,7 +610,7 @@ export function Finance() {
                                     <Button 
                                       variant="ghost" 
                                       size="sm" 
-                                      className="h-8 px-2 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-900 shadow-none" 
+                                      className="h-8 px-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground shadow-none" 
                                       onClick={() => {
                                         setEditingCategory(cat);
                                         setIsEditCategoryOpen(true);
@@ -616,7 +618,7 @@ export function Finance() {
                                     >
                                       Edit
                                     </Button>
-                                    <Separator orientation="vertical" className="h-3 bg-zinc-200" />
+                                    <Separator orientation="vertical" className="h-3 bg-border" />
                                     <Button 
                                       variant="ghost" 
                                       size="sm" 
@@ -706,7 +708,7 @@ export function Finance() {
                       </Select>
                     </div>
                     <DialogFooter className="pt-4">
-                      <Button type="submit" className="w-full h-14 bg-zinc-900 text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl shadow-zinc-200">
+                       <Button type="submit" className="w-full h-14 bg-[#1A2332] text-white font-black uppercase tracking-widest text-xs rounded-2xl">
                         Register Category <Plus className="w-4 h-4 ml-2" />
                       </Button>
                     </DialogFooter>
@@ -716,7 +718,7 @@ export function Finance() {
 
               <Dialog open={isAddExpenseOpen} onOpenChange={setIsAddExpenseOpen}>
                 <DialogTrigger render={
-                  <Button className="h-7 gap-2 px-3 bg-zinc-900 text-white rounded-lg inline-flex items-center justify-center text-xs font-black uppercase tracking-widest transition-all hover:bg-zinc-800 shadow-sm">
+                   <Button className="h-7 gap-2 px-3 bg-[#1A2332] text-white rounded-lg inline-flex items-center justify-center text-xs font-black uppercase tracking-widest transition-all hover:bg-[#1A2332]/90">
                     <Plus className="w-3 h-3" /> Record Entry
                   </Button>
                 } />
@@ -730,7 +732,7 @@ export function Finance() {
                       <div className="space-y-2">
                         <Label htmlFor="expense-category" className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Category</Label>
                         <Select name="category" required>
-                          <SelectTrigger id="expense-category" className="rounded-xl border-2 border-zinc-100 h-11">
+                          <SelectTrigger id="expense-category" className="rounded-xl border-2 border-border h-11">
                             <SelectValue placeholder="Classification" />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl">
@@ -745,7 +747,7 @@ export function Finance() {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="expense-date" className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Expense Date</Label>
-                        <Input id="expense-date" name="date" type="date" defaultValue={new Date().toISOString().split('T')[0]} required className="rounded-xl border-2 border-zinc-100 h-11" />
+                        <Input id="expense-date" name="date" type="date" defaultValue={new Date().toISOString().split('T')[0]} required className="rounded-xl border-2 border-border h-11" />
                       </div>
                     </div>
 
@@ -753,19 +755,19 @@ export function Finance() {
                       <Label htmlFor="expense-amount" className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Amount (₱)</Label>
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-black text-sm">₱</span>
-                        <Input id="expense-amount" name="amount" type="number" step="0.01" required placeholder="0.00" className="rounded-xl border-2 border-zinc-100 h-12 pl-8 focus:border-zinc-900 transition-all font-black" />
+                        <Input id="expense-amount" name="amount" type="number" step="0.01" required placeholder="0.00" className="rounded-xl border-2 border-border h-12 pl-8 focus:border-zinc-900 transition-all font-black" />
                       </div>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="expense-description" className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Description</Label>
-                      <Input id="expense-description" name="description" placeholder="Operational details..." className="rounded-xl border-2 border-zinc-100 h-12 focus:border-zinc-900 transition-all" />
+                      <Input id="expense-description" name="description" placeholder="Operational details..." className="rounded-xl border-2 border-border h-12 focus:border-zinc-900 transition-all" />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="expense-order" className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Linked Order (Optional)</Label>
                       <Select name="orderId">
-                        <SelectTrigger id="expense-order" className="rounded-xl border-2 border-zinc-100 h-11">
+                        <SelectTrigger id="expense-order" className="rounded-xl border-2 border-border h-11">
                           <SelectValue placeholder="No order linked" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl">
@@ -784,7 +786,7 @@ export function Finance() {
                     </div>
 
                     <DialogFooter className="pt-2">
-                      <Button type="submit" className="w-full h-14 bg-zinc-900 text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl shadow-zinc-200" disabled={activeCategories.length === 0}>
+                       <Button type="submit" className="w-full h-14 bg-[#1A2332] text-white font-black uppercase tracking-widest text-xs rounded-2xl" disabled={activeCategories.length === 0}>
                         Post to Ledger <ArrowUpRight className="w-4 h-4 ml-2" />
                       </Button>
                     </DialogFooter>
@@ -794,12 +796,12 @@ export function Finance() {
             </div>
           </div>
 
-          <div className="bg-white border rounded-xl shadow-sm overflow-hidden mb-8">
+          <div className="bg-background border border-border rounded-xl overflow-hidden mb-8">
             <Table>
-              <TableHeader className="bg-zinc-50/50">
+              <TableHeader className="bg-muted/50">
                   <TableRow>
                     <TableHead 
-                      className="text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:bg-zinc-100 transition-colors"
+                      className="text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:bg-muted transition-colors"
                       onClick={() => toggleSort('date')}
                     >
                       <div className="flex items-center gap-1">
@@ -807,7 +809,7 @@ export function Finance() {
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:bg-zinc-100 transition-colors"
+                      className="text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:bg-muted transition-colors"
                       onClick={() => toggleSort('category')}
                     >
                       <div className="flex items-center gap-1">
@@ -815,7 +817,7 @@ export function Finance() {
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:bg-zinc-100 transition-colors"
+                      className="text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:bg-muted transition-colors"
                       onClick={() => toggleSort('orderId')}
                     >
                       <div className="flex items-center gap-1">
@@ -823,7 +825,7 @@ export function Finance() {
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="text-[10px] font-bold uppercase tracking-widest text-right cursor-pointer hover:bg-zinc-100 transition-colors"
+                      className="text-[10px] font-bold uppercase tracking-widest text-right cursor-pointer hover:bg-muted transition-colors"
                       onClick={() => toggleSort('amount')}
                     >
                       <div className="flex items-center justify-end gap-1">
@@ -838,15 +840,15 @@ export function Finance() {
                     const linkedOrder = e.orderId ? orders.find(o => o.id === e.orderId) : null;
                     return (
                       <TableRow key={e.id} className="group">
-                        <TableCell className="text-xs text-zinc-500 font-medium">
+                        <TableCell className="text-xs text-muted-foreground font-medium">
                           {typeof e.date?.toDate === 'function' ? e.date.toDate().toLocaleDateString() : 'N/A'}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="text-[9px] font-black uppercase bg-zinc-50 border-zinc-200">
+                           <Badge variant="outline" className="text-[9px] font-black uppercase bg-muted border-border text-muted-foreground">
                             {e.category}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-xs font-semibold text-zinc-900 max-w-[250px]">
+                        <TableCell className="text-xs font-semibold text-foreground max-w-[250px]">
                           <div className="flex flex-col">
                             {linkedOrder && (
                               <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-tighter mb-0.5">
@@ -864,7 +866,7 @@ export function Finance() {
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              className="h-7 w-7 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100" 
+                              className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted" 
                               onClick={() => {
                                 setEditingExpense(e);
                                 setIsEditExpenseOpen(true);
@@ -875,7 +877,7 @@ export function Finance() {
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              className="h-7 w-7 text-zinc-400 hover:text-red-600 hover:bg-red-50" 
+                              className="h-7 w-7 text-muted-foreground hover:text-red-500 hover:bg-red-500/10" 
                               onClick={() => handleDeleteExpense(e.id)}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -979,13 +981,13 @@ export function Finance() {
 
         {/* Financial Policy & Compliance Sidebar */}
         <div className="w-full lg:w-80 space-y-4">
-          <Card className="border-zinc-200 shadow-sm bg-white">
-            <CardHeader className="pb-3 border-b border-zinc-100">
+          <Card className="border-border bg-card">
+            <CardHeader className="pb-3 border-b border-border">
               <div className="flex items-center gap-2">
-                <PieChartIcon className="h-4 w-4 text-zinc-900" />
-                <CardTitle className="text-xs font-black uppercase tracking-widest text-zinc-900">Expense Allocation</CardTitle>
+                <PieChartIcon className="h-4 w-4 text-[#fdd001]" />
+                <CardTitle className="text-xs font-black uppercase tracking-widest text-foreground">Expense Allocation</CardTitle>
               </div>
-              <CardDescription className="text-[10px] font-medium text-zinc-500 mt-0.5">{currentMonthName} {currentMonthYear} Distribution</CardDescription>
+              <CardDescription className="text-[10px] font-medium text-muted-foreground mt-0.5">{currentMonthName} {currentMonthYear} Distribution</CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="h-[200px] w-full">
@@ -1007,9 +1009,10 @@ export function Finance() {
                       </Pie>
                       <Tooltip 
                          contentStyle={{ 
-                           borderRadius: '12px', 
-                           border: '1px solid #e4e4e7', 
-                           boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                           borderRadius: '8px', 
+                           border: '1px solid #1A2332', 
+                           backgroundColor: '#1A2332',
+                           color: '#fdd001',
                            fontSize: '11px',
                            fontWeight: 'bold'
                          }}
@@ -1022,7 +1025,7 @@ export function Finance() {
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="h-full flex items-center justify-center text-[10px] text-zinc-400 italic">
+                   <div className="h-full flex items-center justify-center text-[10px] text-muted-foreground italic">
                     No expense data for this month.
                   </div>
                 )}
@@ -1037,22 +1040,22 @@ export function Finance() {
                           className="w-2 h-2 rounded-full" 
                           style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }} 
                         />
-                        <span className="text-[10px] font-bold text-zinc-700 truncate max-w-[120px]">{item.name}</span>
+                        <span className="text-[10px] font-bold text-muted-foreground truncate max-w-[120px]">{item.name}</span>
                       </div>
-                      <span className="text-[10px] font-black text-zinc-900">₱{item.value.toLocaleString()}</span>
+                       <span className="text-[10px] font-black text-foreground">₱{item.value.toLocaleString()}</span>
                     </div>
                   ))}
                   {pieData.length > 4 && (
-                    <p className="text-[9px] text-zinc-400 font-medium text-center pt-1">+{pieData.length - 4} more categories</p>
+                    <p className="text-[9px] text-muted-foreground font-medium text-center pt-1">+{pieData.length - 4} more categories</p>
                   )}
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <Card className="border-zinc-900 bg-zinc-900 text-white shadow-lg overflow-hidden">
+          <Card className="border-[#1A2332] bg-[#1A2332] text-white overflow-hidden">
              <div className="p-4 space-y-2">
-               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">System Report Generator</h4>
+               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">System Report Generator</h4>
                <p className="text-xs text-zinc-300 leading-normal">
                  Export the current Configuration Item (CI) financial mapping for audit.
                </p>

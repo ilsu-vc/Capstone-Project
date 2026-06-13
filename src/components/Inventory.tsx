@@ -141,7 +141,7 @@ export function Inventory() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
           <Input 
             placeholder="Search by SKU or Name..." 
-            className="pl-9 h-10 border-zinc-200 bg-white"
+            className="pl-9 h-10 border-border bg-background"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -149,7 +149,7 @@ export function Inventory() {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           {isAdmin && (
             <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
-              <DialogTrigger className="h-10 gap-2 px-4 bg-zinc-900 text-white rounded-lg inline-flex items-center justify-center font-medium shadow-sm transition-all hover:bg-zinc-800">
+              <DialogTrigger className="h-10 gap-2 px-4 bg-[#1A2332] text-white rounded-lg inline-flex items-center justify-center font-medium transition-all hover:bg-[#1A2332]/90">
                 <Plus className="w-4 h-4" /> Add Product CI
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
@@ -202,9 +202,9 @@ export function Inventory() {
         </div>
       </div>
 
-      <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
         <Table>
-          <TableHeader className="bg-zinc-50/50">
+          <TableHeader className="bg-muted/50">
             <TableRow>
               <TableHead className="w-[100px] text-[10px] font-bold uppercase tracking-widest">SKU</TableHead>
               <TableHead className="text-[10px] font-bold uppercase tracking-widest text-zinc-900">Item Details</TableHead>
@@ -221,7 +221,7 @@ export function Inventory() {
               return (
                 <TableRow 
                   key={p.id} 
-                  className="group hover:bg-zinc-50/50 transition-colors cursor-pointer"
+                  className="group hover:bg-muted/50 transition-colors cursor-pointer"
                   onClick={() => {
                     setSelectedProduct(p);
                     setIsDetailOpen(true);
@@ -255,7 +255,7 @@ export function Inventory() {
                   </TableCell>
                   <TableCell className="text-right space-x-1" onClick={(e) => e.stopPropagation()}>
                     <Dialog>
-                      <DialogTrigger className="inline-flex items-center justify-center h-8 w-8 rounded-lg text-zinc-400 hover:text-zinc-900 transition-all">
+                      <DialogTrigger className="inline-flex items-center justify-center h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all">
                         <QrCode className="w-4 h-4" />
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-xs text-center">
@@ -263,12 +263,12 @@ export function Inventory() {
                           <DialogTitle className="text-center">Asset QR Label</DialogTitle>
                         </DialogHeader>
                         <div className="flex flex-col items-center gap-4 py-8">
-                          <div className="p-4 bg-white border-2 border-zinc-900 rounded-2xl shadow-lg">
+                          <div className="p-4 bg-card border-2 border-primary rounded-2xl">
                             <QRCodeSVG value={p.id} size={180} />
                           </div>
                           <div className="space-y-1">
                             <p className="text-sm font-black">{p.name}</p>
-                            <p className="text-xs font-mono text-zinc-500">{p.sku}</p>
+                            <p className="text-xs font-mono text-muted-foreground">{p.sku}</p>
                           </div>
                         </div>
                         <Button className="w-full gap-2" variant="outline" onClick={() => window.print()}>
@@ -281,7 +281,7 @@ export function Inventory() {
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 text-zinc-400 hover:text-zinc-900"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
                         onClick={() => {
                           setSelectedProduct(p);
                           setIsStockUpdateOpen(true);
@@ -328,7 +328,7 @@ export function Inventory() {
               </div>
               <div className="space-y-2">
                 <Label>Current System Total</Label>
-                <div className="h-10 px-3 flex items-center bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-bold">
+                <div className="h-10 px-3 flex items-center bg-muted border border-border rounded-lg text-xs font-bold">
                   {selectedProduct ? getStockCount(selectedProduct.id) : 0} units
                 </div>
               </div>
@@ -336,7 +336,7 @@ export function Inventory() {
             <div className="space-y-2">
               <Label htmlFor="reason">Adjustment Reason</Label>
               <Input id="reason" name="reason" required placeholder="e.g., Damaged item, Physical count correction..." />
-              <p className="text-[10px] text-zinc-500 italic">Mandatory for internal audit compliance.</p>
+              <p className="text-[10px] text-muted-foreground italic">Mandatory for internal audit compliance.</p>
             </div>
             <DialogFooter>
               <Button type="submit" className="w-full">Commit Adjustment</Button>
@@ -348,14 +348,14 @@ export function Inventory() {
       {/* Product Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="max-w-3xl rounded-[2rem]">
-          <DialogHeader className="pb-4 border-b border-zinc-100">
+          <DialogHeader className="pb-4 border-b border-border">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-zinc-900 rounded-xl">
-                <Package className="w-5 h-5 text-white" />
+              <div className="p-2 bg-primary rounded-xl">
+                <Package className="w-5 h-5 text-primary-foreground" />
               </div>
               <div>
                 <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Configuration Item: {selectedProduct?.name}</DialogTitle>
-                <DialogDescription className="text-zinc-500 font-medium">Service catalog specification and inventory node status.</DialogDescription>
+                <DialogDescription className="text-muted-foreground font-medium">Service catalog specification and inventory node status.</DialogDescription>
               </div>
             </div>
           </DialogHeader>
@@ -363,40 +363,40 @@ export function Inventory() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-6">
             <div className="space-y-6">
               <div>
-                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 block">Technical Specifications</Label>
-                <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-100 space-y-3">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2 block">Technical Specifications</Label>
+                <div className="bg-muted rounded-2xl p-4 border border-border space-y-3">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-zinc-500 font-medium">SKU Node</span>
-                    <span className="font-mono font-bold text-zinc-900">{selectedProduct?.sku}</span>
+                    <span className="text-muted-foreground font-medium">SKU Node</span>
+                    <span className="font-mono font-bold text-foreground">{selectedProduct?.sku}</span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-zinc-500 font-medium">Classification</span>
+                    <span className="text-muted-foreground font-medium">Classification</span>
                     <Badge variant="outline" className="font-black uppercase text-[9px] tracking-widest py-0 h-5">{selectedProduct?.category}</Badge>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-zinc-500 font-medium">Min Threshold</span>
-                    <span className="font-bold text-zinc-900">{selectedProduct?.minStockLevel || 0} units</span>
+                    <span className="text-muted-foreground font-medium">Min Threshold</span>
+                    <span className="font-bold text-foreground">{selectedProduct?.minStockLevel || 0} units</span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-zinc-500 font-medium">Reorder Point</span>
-                    <span className="font-bold text-zinc-900">{selectedProduct?.reorderPoint || 0} units</span>
+                    <span className="text-muted-foreground font-medium">Reorder Point</span>
+                    <span className="font-bold text-foreground">{selectedProduct?.reorderPoint || 0} units</span>
                   </div>
                 </div>
               </div>
 
               <div>
-                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 block">Pricing Tiers (₱)</Label>
-                <div className="bg-zinc-900 rounded-2xl p-4 text-white space-y-3 shadow-xl shadow-zinc-200">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2 block">Pricing Tiers (₱)</Label>
+                <div className="bg-foreground rounded-2xl p-4 text-background space-y-3">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-zinc-400 font-medium">Base Acquisition</span>
+                    <span className="text-muted-foreground font-medium">Base Acquisition</span>
                     <span className="font-black">₱{selectedProduct?.basePrice.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-zinc-400 font-medium">Wholesale Rate</span>
+                    <span className="text-muted-foreground font-medium">Wholesale Rate</span>
                     <span className="font-black text-emerald-400">₱{selectedProduct?.wholesalePrice.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-zinc-400 font-medium">Dealer Agreement</span>
+                    <span className="text-muted-foreground font-medium">Dealer Agreement</span>
                     <span className="font-black text-blue-400">₱{selectedProduct?.dealerPrice.toLocaleString()}</span>
                   </div>
                 </div>
@@ -405,15 +405,15 @@ export function Inventory() {
 
             <div className="space-y-6">
               <div>
-                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 block">Warehouse Deployment</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2 block">Warehouse Deployment</Label>
                 <div className="space-y-2">
                   {warehouses.map(wh => {
                     const count = getStockCount(selectedProduct?.id || '', wh.id);
                     return (
-                      <div key={wh.id} className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-100 hover:border-zinc-300 transition-colors">
+                      <div key={wh.id} className="flex items-center justify-between p-3 bg-muted rounded-xl border border-border hover:border-foreground/20 transition-colors">
                         <div className="flex items-center gap-2">
-                          <WarehouseIcon className="w-4 h-4 text-zinc-400" />
-                          <span className="text-xs font-bold text-zinc-700">{wh.name}</span>
+                          <WarehouseIcon className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-xs font-bold text-foreground">{wh.name}</span>
                         </div>
                         <Badge variant="secondary" className="font-black rounded-lg">{count} units</Badge>
                       </div>
@@ -422,7 +422,7 @@ export function Inventory() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-dashed border-zinc-200">
+              <div className="pt-4 border-t border-dashed border-border">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-xs font-black uppercase tracking-widest text-zinc-900">Aggregate Global Inventory</span>
                   <Badge className="bg-emerald-500 font-black h-8 px-4 rounded-xl">
@@ -431,7 +431,7 @@ export function Inventory() {
                 </div>
                 
                 <div className="flex items-center gap-3">
-                  <div className="p-3 bg-zinc-100 rounded-xl">
+                  <div className="p-3 bg-muted rounded-xl">
                      <QrCode className="w-8 h-8 text-zinc-400" />
                   </div>
                   <div className="flex-1">
@@ -443,7 +443,7 @@ export function Inventory() {
             </div>
           </div>
 
-          <DialogFooter className="pt-4 border-t border-zinc-100">
+          <DialogFooter className="pt-4 border-t border-border">
             <Button 
               variant="outline" 
               onClick={() => setIsDetailOpen(false)}
@@ -457,7 +457,7 @@ export function Inventory() {
                   setIsDetailOpen(false);
                   setIsStockUpdateOpen(true);
                 }}
-                className="h-12 px-8 bg-zinc-900 text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-zinc-200"
+                className="h-12 px-8 bg-[#1A2332] text-white rounded-xl font-black uppercase tracking-widest text-[10px]"
               >
                 Adjust Stock <Plus className="ml-2 w-3 h-3" />
               </Button>
