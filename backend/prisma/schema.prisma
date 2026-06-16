@@ -1,0 +1,136 @@
+// ═══════════════════════════════════════════════════════════════════════════
+//  Prisma Schema — Anti Gravity Backend
+//  Models: AgentSession, ActionLog, BackupEntry, WorkspaceSnapshot
+// ═══════════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────
+
+/// The lifecycle state of an agent session.
+enum SessionStatus {
+  ACTIVE
+  PAUSED
+  TERMINATED
+}
+
+/// Every file operation the agent can perform.
+enum OperationType {
+  READ     // File was read (non-destructive)
+  WRITE    // File was created or overwritten
+  CREATE   // Directory was created
+  DELETE   // File or directory was deleted
+  RENAME   // File or directory was renamed/moved
+  RESTORE  // File was restored from .trash/
+  SNAPSHOT // Workspace tree snapshot was taken
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────
+
+/// Represents one agent working session on the frontend project.
+model AgentSession {
+  id               String        @id @default(cuid())
+  /// Human-readable label, e.g. "Refactor Auth Module – Session 3"
+  name             String
+  status           SessionStatus @default(ACTIVE)
+  /// Absolute path of the frontend root being managed in this session.
+  frontendRootPath String
+  /// Optional notes/description for this session.
+  notes            String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// All operations logged during this session.
+  actions    ActionLog[]
+  /// Workspace snapshots taken during this session.
+  snapshots  WorkspaceSnapshot[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("agent_sessions")
+}
+
+/// An immutable record of a single file operation performed by the agent.
+model ActionLog {
+  id        String @id @default(cuid())
+  sessionId String
+
+  /// The type of operation performed.
+  operation   OperationType
+  /// Path relative to the frontend root (e.g. "src/App.tsx").
+  targetPath  String
+  /// Previous path — populated only for RENAME operations.
+  oldPath     String?
+  /// JSON payload for WRITE ops (e.g. { encoding, size }) or RENAME (new name).
+  payload     Json?
+  /// FK to a BackupEntry if this operation had a pre-op backup.
+  backupId    String?
+  /// Whether the operation completed without error.
+  success     Boolean
+  /// Error message if success = false.
+  errorMessage String?
+
+  createdAt DateTime @default(now())
+
+  /// The session this action belongs to.
+  session   AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  /// The backup created before this destructive operation (nullable).
+  backup    BackupEntry? @relation(fields: [backupId], references: [id])
+
+  @@index([sessionId])
+  @@index([operation])
+  @@index([targetPath])
+  @@index([createdAt])
+  @@map("action_logs")
+}
+
+/// Metadata for a file backed up to .trash/ before a destructive operation.
+model BackupEntry {
+  id String @id @default(cuid())
+
+  /// Relative path of the original file from the frontend root.
+  originalPath String
+  /// Absolute path where the backup copy lives inside backend/.trash/
+  backupPath   String
+  /// Which operation triggered this backup (WRITE, DELETE, RENAME).
+  operation    String
+  /// File size in bytes at time of backup.
+  sizeBytes    BigInt @default(0)
+  /// Timestamp when this backup was restored (null = not yet restored).
+  restoredAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  /// ActionLogs that reference this backup.
+  actionLogs ActionLog[]
+
+  @@index([originalPath])
+  @@index([createdAt])
+  @@map("backup_entries")
+}
+
+/// A point-in-time JSON snapshot of the entire frontend directory tree.
+model WorkspaceSnapshot {
+  id        String @id @default(cuid())
+  sessionId String
+  /// User-supplied label, e.g. "Before refactor".
+  label     String
+  /// Full recursive directory tree stored as JSONB.
+  treeJson  Json
+
+  createdAt DateTime @default(now())
+
+  session AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("workspace_snapshots")
+}

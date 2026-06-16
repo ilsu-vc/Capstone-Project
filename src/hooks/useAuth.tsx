@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect, useRef, createContext, useContext } from 'react';
 import { 
   onAuthStateChanged, 
   User, 
@@ -34,6 +34,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+  const clearInactivityTimer = () => {
+    if (inactivityTimer.current) {
+      clearTimeout(inactivityTimer.current);
+      inactivityTimer.current = null;
+    }
+  };
+
+  const resetInactivityTimer = (currentUser: User | null) => {
+    clearInactivityTimer();
+    if (!currentUser) return;
+    inactivityTimer.current = setTimeout(async () => {
+      await signOut(auth);
+      toast.warning('Session expired', {
+        description: 'You were logged out due to 5 minutes of inactivity.',
+        duration: 6000,
+      });
+    }, INACTIVITY_TIMEOUT_MS);
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -82,10 +104,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile(null);
       }
       setLoading(false);
+      resetInactivityTimer(user);
     });
 
     return () => unsubscribe();
   }, []);
+
+  // Attach activity listeners to reset the inactivity timer
+  useEffect(() => {
+    const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+    const handleActivity = () => resetInactivityTimer(user);
+
+    if (user) {
+      ACTIVITY_EVENTS.forEach(evt => window.addEventListener(evt, handleActivity, { passive: true }));
+    }
+
+    return () => {
+      ACTIVITY_EVENTS.forEach(evt => window.removeEventListener(evt, handleActivity));
+      clearInactivityTimer();
+    };
+  }, [user]);
 
   const signIn = async () => {
     try {

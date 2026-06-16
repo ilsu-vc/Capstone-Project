@@ -21,6 +21,7 @@ import { Transfers } from './components/Transfers';
 import { Settings } from './components/Settings';
 import { Pricelist } from './components/Pricelist';
 import { LogisticsOptimizer } from './components/LogisticsOptimizer';
+import { DelegationPanel } from './components/DelegationPanel';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from 'sonner';
 import { useEffect } from 'react';
@@ -68,28 +69,35 @@ function AppContent() {
 
   return (
     <Routes>
-      <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
+      {/* Root: always redirect — never show the landing page on open */}
+      <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
+
+      {/* Auth routes — redirect to dashboard if already logged in */}
+      <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Auth />} />
+      <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <Auth />} />
+
+      {/* Public informational pages — kept accessible without login */}
       <Route path="/about" element={<About />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
+
+      {/* Onboarding — only for unauthenticated users */}
       <Route path="/onboarding" element={user ? <Navigate to="/dashboard" replace /> : <Onboarding />} />
-      <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Auth />} />
-      <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <Auth />} />
       
       <Route path="/dashboard" element={
-        <ProtectedRoute allowedRoles={['admin', 'secretary', 'agent']}>
+        <ProtectedRoute allowedRoles={['admin', 'secretary', 'agent', 'staff']}>
           <Dashboard />
         </ProtectedRoute>
       } />
       
       <Route path="/inventory" element={
-        <ProtectedRoute allowedRoles={['admin', 'secretary', 'agent']}>
+        <ProtectedRoute allowedRoles={['admin', 'secretary', 'agent', 'staff']}>
           <Inventory />
         </ProtectedRoute>
       } />
       
       <Route path="/orders" element={
-        <ProtectedRoute allowedRoles={['admin', 'secretary', 'agent']}>
+        <ProtectedRoute allowedRoles={['admin', 'secretary', 'agent', 'staff']}>
           <Orders />
         </ProtectedRoute>
       } />
@@ -107,7 +115,7 @@ function AppContent() {
       } />
 
       <Route path="/settings" element={
-        <ProtectedRoute allowedRoles={['admin', 'secretary', 'agent']}>
+        <ProtectedRoute allowedRoles={['admin', 'secretary', 'agent', 'staff']}>
           <Settings />
         </ProtectedRoute>
       } />
@@ -119,7 +127,7 @@ function AppContent() {
       } />
 
       <Route path="/pricelist" element={
-        <ProtectedRoute allowedRoles={['admin', 'secretary', 'agent']}>
+        <ProtectedRoute allowedRoles={['admin', 'secretary', 'agent', 'staff']}>
           <Pricelist />
         </ProtectedRoute>
       } />
@@ -130,7 +138,14 @@ function AppContent() {
         </ProtectedRoute>
       } />
 
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/delegation" element={
+        <ProtectedRoute allowedRoles={['admin', 'agent']}>
+          <DelegationPanel />
+        </ProtectedRoute>
+      } />
+
+      {/* Catch-all: send unauthenticated users to login, authenticated to dashboard */}
+      <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
     </Routes>
   );
 }

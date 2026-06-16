@@ -14,8 +14,11 @@ import {
   Edit2,
   Image as ImageIcon,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Sun,
+  Moon
 } from 'lucide-react';
+import { useTheme } from './ThemeProvider';
 import { useAuth } from '../hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +34,7 @@ export function Settings() {
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [debugLogs, setDebugLogs] = useState(true);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   const isAdmin = profile?.role === 'admin';
 
@@ -56,12 +60,24 @@ export function Settings() {
           <h2 className="text-3xl font-black tracking-tighter text-foreground uppercase">System Settings</h2>
           <p className="text-muted-foreground font-medium">Manage your personal preferences and baseline configurations.</p>
         </div>
-        {isAdmin && (
-          <div className="bg-foreground text-background px-4 py-2 rounded-xl flex items-center gap-3 self-start md:self-center">
-            <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Elevated Privileges Active</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2 self-start md:self-center bg-muted/50 p-1.5 rounded-2xl border border-border">
+          <Button 
+            variant={theme === 'light' ? 'default' : 'ghost'} 
+            size="sm" 
+            onClick={() => setTheme('light')}
+            className={`h-8 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${theme === 'light' ? 'shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            <Sun className="w-3.5 h-3.5 mr-2" /> Light
+          </Button>
+          <Button 
+            variant={theme === 'dark' ? 'default' : 'ghost'} 
+            size="sm" 
+            onClick={() => setTheme('dark')}
+            className={`h-8 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${theme === 'dark' ? 'shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            <Moon className="w-3.5 h-3.5 mr-2" /> Dark
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -84,7 +100,7 @@ export function Settings() {
                     <DialogDescription className="text-muted-foreground font-medium">Update your system identification and avatar node.</DialogDescription>
                   </DialogHeader>
                   <form onSubmit={handleUpdateProfile} className="space-y-6 font-sans">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="firstName" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">First Name</Label>
                         <Input id="firstName" name="firstName" defaultValue={profile?.firstName} required className="rounded-xl border-2 border-border h-12 focus:border-primary transition-all font-bold" />

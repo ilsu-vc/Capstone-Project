@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { collection, onSnapshot, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { Product, InventoryItem, Warehouse } from '../types';
+import { collection, onSnapshot, query, where, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { Product, InventoryItem, Warehouse, StaffDelegation } from '../types';
 import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,7 +27,20 @@ export function Inventory() {
   const [isStockUpdateOpen, setIsStockUpdateOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'secretary';
+  const [hasDelegatedAccess, setHasDelegatedAccess] = useState(false);
+
+  const isAdmin = profile?.role === 'admin';
+  const canAdjustStock = isAdmin || hasDelegatedAccess;
+
+  useEffect(() => {
+    if (!profile || profile.role !== 'staff') return;
+    const q = query(collection(db, 'delegations'), where('staffEmail', '==', profile.email.toLowerCase()));
+    const unsub = onSnapshot(q, (snap) => {
+      const hasAccess = snap.docs.some(d => d.data().canAdjustInventory === true);
+      setHasDelegatedAccess(hasAccess);
+    });
+    return () => unsub();
+  }, [profile]);
 
   useEffect(() => {
     const unsubProducts = onSnapshot(collection(db, 'products'), (snap) => {
@@ -158,7 +171,7 @@ export function Inventory() {
                   <DialogDescription>Register a new bicycle component into the service catalog.</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleAddProduct} className="space-y-4 pt-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="sku">SKU Code</Label>
                       <Input id="sku" name="sku" required placeholder="AP-XYZ-123" />
@@ -203,99 +216,101 @@ export function Inventory() {
       </div>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow>
-              <TableHead className="w-[100px] text-[10px] font-bold uppercase tracking-widest">SKU</TableHead>
-              <TableHead className="text-[10px] font-bold uppercase tracking-widest text-zinc-900">Item Details</TableHead>
-              <TableHead className="text-[10px] font-bold uppercase tracking-widest">Pricing (Base)</TableHead>
-              <TableHead className="text-[10px] font-bold uppercase tracking-widest text-center">Total Stock</TableHead>
-              <TableHead className="text-[10px] font-bold uppercase tracking-widest">Warehouse Sync</TableHead>
-              <TableHead className="text-right text-[10px] font-bold uppercase tracking-widest">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredProducts.map((p) => {
-              const totalStock = getStockCount(p.id);
-              const isLow = totalStock <= p.reorderPoint;
-              return (
-                <TableRow 
-                  key={p.id} 
-                  className="group hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => {
-                    setSelectedProduct(p);
-                    setIsDetailOpen(true);
-                  }}
-                >
-                  <TableCell className="font-mono text-xs text-zinc-500 font-medium">{p.sku}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-bold text-zinc-900">{p.name}</span>
-                      <span className="text-[10px] text-zinc-400 font-medium uppercase">{p.category}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm font-medium">₱{p.basePrice.toLocaleString()}</TableCell>
-                  <TableCell className="text-center">
-                    <Badge 
-                      variant="outline" 
-                      className={`h-6 font-bold ${isLow ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}
-                    >
-                      {totalStock} units
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1">
-                      {warehouses.map(wh => (
-                        <div key={wh.id} className="flex items-center justify-between text-[10px] font-medium text-zinc-500">
-                          <span>{wh.name}:</span>
-                          <span className="font-bold text-zinc-700">{getStockCount(p.id, wh.id)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right space-x-1" onClick={(e) => e.stopPropagation()}>
-                    <Dialog>
-                      <DialogTrigger className="inline-flex items-center justify-center h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all">
-                        <QrCode className="w-4 h-4" />
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-xs text-center">
-                        <DialogHeader>
-                          <DialogTitle className="text-center">Asset QR Label</DialogTitle>
-                        </DialogHeader>
-                        <div className="flex flex-col items-center gap-4 py-8">
-                          <div className="p-4 bg-card border-2 border-primary rounded-2xl">
-                            <QRCodeSVG value={p.id} size={180} />
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-sm font-black">{p.name}</p>
-                            <p className="text-xs font-mono text-muted-foreground">{p.sku}</p>
-                          </div>
-                        </div>
-                        <Button className="w-full gap-2" variant="outline" onClick={() => window.print()}>
-                          Print Label
-                        </Button>
-                      </DialogContent>
-                    </Dialog>
-
-                    {isAdmin && (
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                        onClick={() => {
-                          setSelectedProduct(p);
-                          setIsStockUpdateOpen(true);
-                        }}
+        <div className="overflow-x-auto w-full">
+          <Table>
+            <TableHeader className="bg-muted/50">
+              <TableRow>
+                <TableHead className="w-[100px] text-[10px] font-bold uppercase tracking-widest min-w-[100px]">SKU</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-zinc-900 min-w-[200px]">Item Details</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest min-w-[120px]">Pricing (Base)</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-center min-w-[120px]">Total Stock</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest min-w-[150px]">Warehouse Sync</TableHead>
+                <TableHead className="text-right text-[10px] font-bold uppercase tracking-widest min-w-[100px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredProducts.map((p) => {
+                const totalStock = getStockCount(p.id);
+                const isLow = totalStock <= p.reorderPoint;
+                return (
+                  <TableRow 
+                    key={p.id} 
+                    className="group hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => {
+                      setSelectedProduct(p);
+                      setIsDetailOpen(true);
+                    }}
+                  >
+                    <TableCell className="font-mono text-xs text-zinc-500 font-medium">{p.sku}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-zinc-900">{p.name}</span>
+                        <span className="text-[10px] text-zinc-400 font-medium uppercase">{p.category}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm font-medium">₱{p.basePrice.toLocaleString()}</TableCell>
+                    <TableCell className="text-center">
+                      <Badge 
+                        variant="outline" 
+                        className={`h-6 font-bold ${isLow ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}
                       >
-                        <Package className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                        {totalStock} units
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        {warehouses.map(wh => (
+                          <div key={wh.id} className="flex items-center justify-between text-[10px] font-medium text-zinc-500">
+                            <span>{wh.name}:</span>
+                            <span className="font-bold text-zinc-700">{getStockCount(p.id, wh.id)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right space-x-1" onClick={(e) => e.stopPropagation()}>
+                      <Dialog>
+                        <DialogTrigger className="inline-flex items-center justify-center h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all">
+                          <QrCode className="w-4 h-4" />
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-xs text-center">
+                          <DialogHeader>
+                            <DialogTitle className="text-center">Asset QR Label</DialogTitle>
+                          </DialogHeader>
+                          <div className="flex flex-col items-center gap-4 py-8">
+                            <div className="p-4 bg-card border-2 border-primary rounded-2xl">
+                              <QRCodeSVG value={p.id} size={180} />
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-sm font-black">{p.name}</p>
+                              <p className="text-xs font-mono text-muted-foreground">{p.sku}</p>
+                            </div>
+                          </div>
+                          <Button className="w-full gap-2" variant="outline" onClick={() => window.print()}>
+                            Print Label
+                          </Button>
+                        </DialogContent>
+                      </Dialog>
+
+                      {canAdjustStock && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                          onClick={() => {
+                            setSelectedProduct(p);
+                            setIsStockUpdateOpen(true);
+                          }}
+                        >
+                          <Package className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* Stock Update Dialog */}
@@ -321,10 +336,10 @@ export function Inventory() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Adjustment Qty</Label>
-                <Input name="quantity" type="number" required defaultValue="0" placeholder="+/- units" />
+                <Input name="quantity" type="number" required placeholder="+/- units" />
               </div>
               <div className="space-y-2">
                 <Label>Current System Total</Label>
@@ -334,9 +349,13 @@ export function Inventory() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reason">Adjustment Reason</Label>
-              <Input id="reason" name="reason" required placeholder="e.g., Damaged item, Physical count correction..." />
-              <p className="text-[10px] text-muted-foreground italic">Mandatory for internal audit compliance.</p>
+              <Label htmlFor="reason" className="flex items-center">
+                Adjustment Reason <span className="text-red-500 ml-1.5 font-black uppercase text-[9px] tracking-widest">(Required)</span>
+              </Label>
+              <Input id="reason" name="reason" required placeholder="e.g., Damaged item, Physical count correction..." className="border-red-500/30 focus-visible:ring-red-500/20" />
+              <div className="bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 p-2.5 rounded-lg text-xs font-medium">
+                Mandatory for internal audit compliance.
+              </div>
             </div>
             <DialogFooter>
               <Button type="submit" className="w-full">Commit Adjustment</Button>
@@ -347,7 +366,7 @@ export function Inventory() {
 
       {/* Product Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-3xl rounded-[2rem]">
+        <DialogContent className="max-w-[95vw] sm:max-w-5xl w-full rounded-[2rem]">
           <DialogHeader className="pb-4 border-b border-border">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-primary rounded-xl">
@@ -449,9 +468,9 @@ export function Inventory() {
               onClick={() => setIsDetailOpen(false)}
               className="h-12 px-8 rounded-xl font-black uppercase tracking-widest text-[10px]"
             >
-              Terminate View
+              Close
             </Button>
-            {isAdmin && (
+            {canAdjustStock && (
               <Button 
                 onClick={() => {
                   setIsDetailOpen(false);

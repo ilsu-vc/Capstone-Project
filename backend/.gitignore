@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment secrets
+.env
+
+# Prisma generated client (regenerate with npm run db:generate)
+# node_modules/@prisma is already excluded above
+
+# Auto-managed backup/trash directory
+.trash/
+
+# Logs
+*.log
+logs/
+
+# OS artifacts
+.DS_Store
+Thumbs.db

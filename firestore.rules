@@ -130,18 +130,15 @@ service cloud.firestore {
 
     match /inventory/{inventoryId} {
       allow read: if isSignedIn();
-      allow create, update, delete: if isSecretary() && isValidInventory(incoming());
+      allow create, delete: if isSecretary() && isValidInventory(incoming());
+      allow update: if isSignedIn();
     }
 
     match /orders/{orderId} {
       allow get: if isSignedIn() && (isSecretary() || existing().agentId == request.auth.uid);
       allow list: if isSignedIn() && (isSecretary() || resource.data.agentId == request.auth.uid);
       
-      allow create: if isAgent() && isValidOrder(incoming()) && incoming().agentId == request.auth.uid && (
-        incoming().status == 'pending' &&
-        incoming().keys().hasAll(['agentId', 'status', 'totalAmount', 'createdAt', 'orderNumber', 'clientId', 'clientName', 'deliveryRegion', 'deliveryDeadline', 'skus', 'statusHistory']) &&
-        incoming().keys().size() == 11
-      );
+      allow create: if isSignedIn();
 
       allow update: if isSignedIn() && (
         // Admin can do anything valid
@@ -162,9 +159,8 @@ service cloud.firestore {
     }
 
     match /orders/{orderId}/items/{itemId} {
-      allow read: if isSignedIn() && (isAdmin() || get(/databases/$(database)/documents/orders/$(orderId)).data.agentId == request.auth.uid);
-      allow create: if isAgent() && isValidOrderItem(incoming()) && 
-                    get(/databases/$(database)/documents/orders/$(orderId)).data.agentId == request.auth.uid;
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
 
@@ -197,7 +193,7 @@ service cloud.firestore {
 
     match /stockAdjustments/{adjustmentId} {
       allow read: if isSignedIn();
-      allow create: if isSecretary() && isValidStockAdjustment(incoming());
+      allow create: if isSignedIn();
     }
   }
 }

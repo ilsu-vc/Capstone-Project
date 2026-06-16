@@ -728,7 +728,7 @@ export function Finance() {
                     <DialogDescription className="text-zinc-500 font-medium">Map local shop expenses to the centralized financial reporting system.</DialogDescription>
                   </DialogHeader>
                   <form onSubmit={handleAddExpense} className="space-y-5 pt-4 font-sans">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="expense-category" className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Category</Label>
                         <Select name="category" required>
@@ -797,105 +797,107 @@ export function Finance() {
           </div>
 
           <div className="bg-background border border-border rounded-xl overflow-hidden mb-8">
-            <Table>
-              <TableHeader className="bg-muted/50">
-                  <TableRow>
-                    <TableHead 
-                      className="text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:bg-muted transition-colors"
-                      onClick={() => toggleSort('date')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Date {sortKey === 'date' ? (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ArrowUpDown className="w-2.5 h-2.5 opacity-30" />}
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:bg-muted transition-colors"
-                      onClick={() => toggleSort('category')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Category {sortKey === 'category' ? (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ArrowUpDown className="w-2.5 h-2.5 opacity-30" />}
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:bg-muted transition-colors"
-                      onClick={() => toggleSort('orderId')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Order / Desc {sortKey === 'orderId' ? (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ArrowUpDown className="w-2.5 h-2.5 opacity-30" />}
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="text-[10px] font-bold uppercase tracking-widest text-right cursor-pointer hover:bg-muted transition-colors"
-                      onClick={() => toggleSort('amount')}
-                    >
-                      <div className="flex items-center justify-end gap-1">
-                        Amount {sortKey === 'amount' ? (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ArrowUpDown className="w-2.5 h-2.5 opacity-30" />}
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-[10px] font-bold uppercase tracking-widest text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedExpenses.map((e) => {
-                    const linkedOrder = e.orderId ? orders.find(o => o.id === e.orderId) : null;
-                    return (
-                      <TableRow key={e.id} className="group">
-                        <TableCell className="text-xs text-muted-foreground font-medium">
-                          {typeof e.date?.toDate === 'function' ? e.date.toDate().toLocaleDateString() : 'N/A'}
-                        </TableCell>
-                        <TableCell>
-                           <Badge variant="outline" className="text-[9px] font-black uppercase bg-muted border-border text-muted-foreground">
-                            {e.category}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs font-semibold text-foreground max-w-[250px]">
-                          <div className="flex flex-col">
-                            {linkedOrder && (
-                              <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-tighter mb-0.5">
-                                Linked Order: {linkedOrder.orderNumber}
-                              </span>
-                            )}
-                            <span className="truncate">{e.description}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right font-black text-xs text-red-600">
-                          -₱{e.amount.toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted" 
-                              onClick={() => {
-                                setEditingExpense(e);
-                                setIsEditExpenseOpen(true);
-                              }}
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-7 w-7 text-muted-foreground hover:text-red-500 hover:bg-red-500/10" 
-                              onClick={() => handleDeleteExpense(e.id)}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                {expenses.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center h-24 text-zinc-400 text-xs italic">
-                      No expense records found.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+            <div className="overflow-x-auto w-full">
+              <Table>
+                <TableHeader className="bg-muted/50">
+                    <TableRow>
+                      <TableHead 
+                        className="text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:bg-muted transition-colors min-w-[100px]"
+                        onClick={() => toggleSort('date')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Date {sortKey === 'date' ? (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ArrowUpDown className="w-2.5 h-2.5 opacity-30" />}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:bg-muted transition-colors min-w-[120px]"
+                        onClick={() => toggleSort('category')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Category {sortKey === 'category' ? (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ArrowUpDown className="w-2.5 h-2.5 opacity-30" />}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:bg-muted transition-colors min-w-[200px]"
+                        onClick={() => toggleSort('orderId')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Order / Desc {sortKey === 'orderId' ? (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ArrowUpDown className="w-2.5 h-2.5 opacity-30" />}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="text-[10px] font-bold uppercase tracking-widest text-right cursor-pointer hover:bg-muted transition-colors min-w-[100px]"
+                        onClick={() => toggleSort('amount')}
+                      >
+                        <div className="flex items-center justify-end gap-1">
+                          Amount {sortKey === 'amount' ? (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ArrowUpDown className="w-2.5 h-2.5 opacity-30" />}
+                        </div>
+                      </TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest text-right min-w-[100px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedExpenses.map((e) => {
+                      const linkedOrder = e.orderId ? orders.find(o => o.id === e.orderId) : null;
+                      return (
+                        <TableRow key={e.id} className="group">
+                          <TableCell className="text-xs text-muted-foreground font-medium">
+                            {typeof e.date?.toDate === 'function' ? e.date.toDate().toLocaleDateString() : 'N/A'}
+                          </TableCell>
+                          <TableCell>
+                             <Badge variant="outline" className="text-[9px] font-black uppercase bg-muted border-border text-muted-foreground">
+                              {e.category}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs font-semibold text-foreground max-w-[250px]">
+                            <div className="flex flex-col">
+                              {linkedOrder && (
+                                <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-tighter mb-0.5">
+                                  Linked Order: {linkedOrder.orderNumber}
+                                </span>
+                              )}
+                              <span className="truncate">{e.description}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right font-black text-xs text-red-600">
+                            -₱{e.amount.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted" 
+                                onClick={() => {
+                                  setEditingExpense(e);
+                                  setIsEditExpenseOpen(true);
+                                }}
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-7 w-7 text-muted-foreground hover:text-red-500 hover:bg-red-500/10" 
+                                onClick={() => handleDeleteExpense(e.id)}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  {expenses.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center h-24 text-zinc-400 text-xs italic">
+                        No expense records found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
 
           <Dialog open={isEditExpenseOpen} onOpenChange={setIsEditExpenseOpen}>

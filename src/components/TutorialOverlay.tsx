@@ -81,8 +81,8 @@ export const TutorialOverlay = ({ open, onOpenChange }: { open: boolean, onOpenC
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl p-0 bg-white border-zinc-200 overflow-hidden rounded-[2rem]">
-        <div className="flex flex-col md:flex-row h-[70vh]">
+      <DialogContent className="w-[75vw] max-w-[95vw] sm:max-w-[95vw] p-0 bg-white border-zinc-200 overflow-hidden rounded-[2rem]">
+        <div className="flex flex-col md:flex-row h-[90vh] min-h-[90vh]">
           {/* Left: Interactive Visual */}
           <div className="md:w-2/5 bg-zinc-950 p-10 flex flex-col justify-between text-white relative">
             <div className="relative z-10">

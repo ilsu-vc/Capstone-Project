@@ -139,7 +139,7 @@ export function Transfers() {
               <DialogDescription>Request a transfer of inventory items between warehouse locations.</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleInitiateTransfer} className="space-y-4 pt-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Source Facility</Label>
                   <Select name="sourceWh" required>
@@ -193,76 +193,80 @@ export function Transfers() {
       </div>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow>
-              <TableHead className="text-[10px] font-bold uppercase tracking-widest">Movement ID</TableHead>
-              <TableHead className="text-[10px] font-bold uppercase tracking-widest">Asset Details</TableHead>
-              <TableHead className="text-[10px] font-bold uppercase tracking-widest">Traffic Flow</TableHead>
-              <TableHead className="text-[10px] font-bold uppercase tracking-widest">Operational Status</TableHead>
-              <TableHead className="text-[10px] font-bold uppercase tracking-widest text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transfers.map((t) => {
-              const product = products.find(p => p.id === t.productId);
-              const source = warehouses.find(w => w.id === t.sourceWarehouseId);
-              const dest = warehouses.find(w => w.id === t.destinationWarehouseId);
-              return (
-                <TableRow key={t.id} className="group">
-                  <TableCell className="font-mono text-[10px] text-zinc-400 font-bold uppercase tracking-tighter">
-                    TFR-{t.id.slice(-6)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-black text-foreground">{product?.name || 'Unknown'}</span>
-                      <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Qty: {t.quantity}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-foreground">
-                      <span className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{source?.name}</span>
-                       <ArrowRightLeft className="w-3 h-3 text-muted-foreground/40" />
-                       <span className="bg-[#1A2332] text-white px-1.5 py-0.5 rounded">{dest?.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={`gap-1.5 h-6 capitalize text-[10px] font-black ${
-                      t.status === 'received' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30' :
-                      t.status === 'in_transit' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' :
-                      'bg-amber-500/10 text-amber-500 border-amber-500/30'
-                    }`}>
-                      {t.status === 'pending' && <Clock className="w-3 h-3" />}
-                      {t.status === 'in_transit' && <Truck className="w-3 h-3" />}
-                      {t.status === 'received' && <CheckCircle2 className="w-3 h-3" />}
-                      {t.status.replace('_', ' ')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {t.status === 'pending' && (
-                      <Button size="sm" variant="ghost" className="text-xs font-bold h-8" onClick={() => updateStatus(t, 'in_transit')}>
-                        Dispatch
-                      </Button>
-                    )}
-                    {t.status === 'in_transit' && (
-                      <Button size="sm" variant="ghost" className="text-xs font-bold h-8 text-emerald-500 hover:bg-emerald-500/10" onClick={() => updateStatus(t, 'received')}>
-                        Confirm Arrival
-                      </Button>
-                    )}
+        <div className="overflow-x-auto w-full">
+          <Table>
+            <TableHeader className="bg-muted/50">
+              <TableRow>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest min-w-[120px]">Movement ID</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest min-w-[150px]">Asset Details</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest min-w-[200px]">Traffic Flow</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest min-w-[150px]">Operational Status</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-right min-w-[150px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {transfers.map((t) => {
+                const product = products.find(p => p.id === t.productId);
+                const source = warehouses.find(w => w.id === t.sourceWarehouseId);
+                const dest = warehouses.find(w => w.id === t.destinationWarehouseId);
+                return (
+                  <TableRow key={t.id} className="group">
+                    <TableCell className="font-mono text-[10px] text-zinc-400 font-bold uppercase tracking-tighter">
+                      TFR-{t.id.slice(-6)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-black text-foreground">{product?.name || 'Unknown'}</span>
+                        <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Qty: {t.quantity}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-foreground">
+                        <span className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{source?.name}</span>
+                         <ArrowRightLeft className="w-3 h-3 text-muted-foreground/40" />
+                         <span className="bg-[#1A2332] text-white px-1.5 py-0.5 rounded">{dest?.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={`gap-1.5 h-6 capitalize text-[10px] font-black ${
+                        t.status === 'received' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30' :
+                        t.status === 'in_transit' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' :
+                        'bg-amber-500/10 text-amber-500 border-amber-500/30'
+                      }`}>
+                        {t.status === 'pending' && <Clock className="w-3 h-3" />}
+                        {t.status === 'in_transit' && <Truck className="w-3 h-3" />}
+                        {t.status === 'received' && <CheckCircle2 className="w-3 h-3" />}
+                        {t.status.replace('_', ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {t.status === 'pending' && (
+                        <Button size="sm" variant="ghost" className="text-xs font-bold h-8" onClick={() => updateStatus(t, 'in_transit')}>
+                          Dispatch
+                        </Button>
+                      )}
+                      {t.status === 'in_transit' && (
+                        <Button size="sm" variant="ghost" className="text-xs font-bold h-8 text-emerald-500 hover:bg-emerald-500/10" onClick={() => updateStatus(t, 'received')}>
+                          Confirm Arrival
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+              {transfers.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center h-32">
+                     <div className="flex flex-col items-center justify-center gap-2">
+                       <History className="w-8 h-8 text-muted-foreground/30" />
+                       <p className="text-xs font-medium text-muted-foreground">No active transfers tracked</p>
+                     </div>
                   </TableCell>
                 </TableRow>
-              );
-            })}
-            {transfers.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center h-32 flex flex-col items-center justify-center gap-2">
-                   <History className="w-8 h-8 text-muted-foreground/30" />
-                   <p className="text-xs font-medium text-muted-foreground">No active transfers tracked</p>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );

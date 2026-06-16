@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'secretary' | 'agent';
+export type UserRole = 'admin' | 'secretary' | 'agent' | 'staff';
 
 export interface UserProfile {
   uid: string;
@@ -9,6 +9,15 @@ export interface UserProfile {
   photoUrl?: string;
   role: UserRole;
   region?: string;
+}
+
+export interface StaffDelegation {
+  id: string;
+  agentId: string;
+  staffEmail: string;
+  canAdjustInventory: boolean;
+  canAdjustPricelist: boolean;
+  createdAt: any;
 }
 
 export interface Product {

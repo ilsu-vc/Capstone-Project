@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../lib/firebase';
-import { collection, onSnapshot, addDoc, getDocs, serverTimestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, addDoc, getDocs, serverTimestamp } from 'firebase/firestore';
 import { Product } from '../types';
 import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,7 +19,20 @@ export function Pricelist() {
   const [loading, setLoading] = useState(true);
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const { profile } = useAuth();
+  const [hasDelegatedAccess, setHasDelegatedAccess] = useState(false);
+
   const isAdmin = profile?.role === 'admin';
+  const canEditPricelist = isAdmin || hasDelegatedAccess;
+
+  useEffect(() => {
+    if (!profile || profile.role !== 'staff') return;
+    const q = query(collection(db, 'delegations'), where('staffEmail', '==', profile.email.toLowerCase()));
+    const unsub = onSnapshot(q, (snap) => {
+      const hasAccess = snap.docs.some(d => d.data().canAdjustPricelist === true);
+      setHasDelegatedAccess(hasAccess);
+    });
+    return () => unsub();
+  }, [profile]);
 
   useEffect(() => {
     const unsubProducts = onSnapshot(collection(db, 'products'), (snap) => {
@@ -37,7 +50,7 @@ export function Pricelist() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const newProduct = {
-      sku: formData.get('sku'),
+      sku: formData.get('code'),
       name: formData.get('name'),
       category: formData.get('category'),
       basePrice: Number(formData.get('basePrice')),
@@ -76,10 +89,10 @@ export function Pricelist() {
 
   const categories = useMemo(() => {
     const cats = new Set(filteredProducts.map(p => p.category || 'Uncategorized'));
-    return Array.from(cats).sort();
+    return ['All', ...Array.from(cats).sort()];
   }, [filteredProducts]);
 
-  const defaultCategory = categories.length > 0 ? categories[0] : '';
+  const defaultCategory = 'All';
 
   if (loading) {
     return (
@@ -92,18 +105,18 @@ export function Pricelist() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <h2 className="text-2xl font-bold tracking-tight text-foreground uppercase">Master Pricelist</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-foreground uppercase">Pricelist</h2>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
             <Input 
-              placeholder="Search by product name or SKU..." 
+              placeholder="Search by product name or Item Code..." 
               className="pl-9 h-10 border-border bg-background"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          {isAdmin && (
+          {canEditPricelist && (
             <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
               <DialogTrigger className="h-10 gap-2 px-4 bg-[#1A2332] text-white rounded-lg inline-flex items-center justify-center font-medium transition-all hover:bg-[#1A2332]/90 flex-shrink-0">
                 <Plus className="w-4 h-4" /> Add Product
@@ -114,10 +127,10 @@ export function Pricelist() {
                   <DialogDescription>Register a new product with pricing into the catalog.</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleAddProduct} className="space-y-4 pt-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="sku">SKU Code</Label>
-                      <Input id="sku" name="sku" required placeholder="AP-XYZ-123" />
+                      <Label htmlFor="code">Item Code</Label>
+                      <Input id="code" name="code" required placeholder="AP-XYZ-123" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="name">Item Name</Label>
@@ -169,33 +182,37 @@ export function Pricelist() {
           </TabsList>
           
           {categories.map(category => {
-            const categoryProducts = filteredProducts.filter(p => (p.category || 'Uncategorized') === category);
+            const categoryProducts = category === 'All' 
+              ? filteredProducts 
+              : filteredProducts.filter(p => (p.category || 'Uncategorized') === category);
             
             return (
               <TabsContent key={category} value={category} className="mt-0">
                 <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                  <Table>
-                    <TableHeader className="bg-muted/50">
-                      <TableRow>
-                        <TableHead className="w-[120px] text-[10px] font-bold uppercase tracking-widest">SKU</TableHead>
-                        <TableHead className="text-[10px] font-bold uppercase tracking-widest text-zinc-900">Product Name</TableHead>
-                        <TableHead className="text-right text-[10px] font-bold uppercase tracking-widest">Base Price</TableHead>
-                        <TableHead className="text-right text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Wholesale</TableHead>
-                        <TableHead className="text-right text-[10px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">Dealer</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {categoryProducts.map((p) => (
-                        <TableRow key={p.id} className="hover:bg-muted/30 transition-colors">
-                          <TableCell className="font-mono text-xs text-zinc-500">{p.sku}</TableCell>
-                          <TableCell className="font-bold text-sm text-foreground">{p.name}</TableCell>
-                          <TableCell className="text-right font-medium">₱{p.basePrice?.toLocaleString() || '0'}</TableCell>
-                          <TableCell className="text-right font-bold text-emerald-600 dark:text-emerald-400">₱{p.wholesalePrice?.toLocaleString() || '0'}</TableCell>
-                          <TableCell className="text-right font-bold text-blue-600 dark:text-blue-400">₱{p.dealerPrice?.toLocaleString() || '0'}</TableCell>
+                  <div className="overflow-x-auto w-full">
+                    <Table>
+                      <TableHeader className="bg-muted/50">
+                        <TableRow>
+                          <TableHead className="w-[120px] text-[10px] font-bold uppercase tracking-widest min-w-[120px]">Item Code</TableHead>
+                          <TableHead className="text-[10px] font-bold uppercase tracking-widest text-zinc-900 min-w-[200px]">Product Name</TableHead>
+                          <TableHead className="text-right text-[10px] font-bold uppercase tracking-widest min-w-[100px]">Base Price</TableHead>
+                          <TableHead className="text-right text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 min-w-[100px]">Wholesale</TableHead>
+                          <TableHead className="text-right text-[10px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400 min-w-[100px]">Dealer</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {categoryProducts.map((p) => (
+                          <TableRow key={p.id} className="hover:bg-muted/30 transition-colors">
+                            <TableCell className="font-mono text-xs text-zinc-500">{p.sku}</TableCell>
+                            <TableCell className="font-bold text-sm text-foreground">{p.name}</TableCell>
+                            <TableCell className="text-right font-medium">₱{p.basePrice?.toLocaleString() || '0'}</TableCell>
+                            <TableCell className="text-right font-bold text-emerald-600 dark:text-emerald-400">₱{p.wholesalePrice?.toLocaleString() || '0'}</TableCell>
+                            <TableCell className="text-right font-bold text-blue-600 dark:text-blue-400">₱{p.dealerPrice?.toLocaleString() || '0'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               </TabsContent>
             );

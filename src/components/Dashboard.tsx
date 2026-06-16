@@ -102,15 +102,32 @@ export function Dashboard() {
     return () => unsubscribeOrders();
   }, [profile]);
 
-  const chartData = [
-    { name: 'Mon', sales: 4000 },
-    { name: 'Tue', sales: 3000 },
-    { name: 'Wed', sales: 2000 },
-    { name: 'Thu', sales: 2780 },
-    { name: 'Fri', sales: 1890 },
-    { name: 'Sat', sales: 2390 },
-    { name: 'Sun', sales: 3490 },
-  ];
+  // Build last-7-days chart data from real orders
+  const chartData = (() => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = new Date();
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - (6 - i));
+      const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const dayEnd   = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+
+      const dayOrders = orders.filter(o => {
+        if (!o.createdAt) return false;
+        const ts = typeof o.createdAt.toDate === 'function'
+          ? o.createdAt.toDate()
+          : new Date(o.createdAt);
+        return ts >= dayStart && ts < dayEnd;
+      });
+
+      return {
+        name: days[d.getDay()],
+        date: `${d.getMonth() + 1}/${d.getDate()}`,
+        sales: dayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0),
+        orders: dayOrders.length,
+      };
+    });
+  })();
 
   if (loading) {
     return (
@@ -155,7 +172,7 @@ export function Dashboard() {
 
         <Card className="border border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">SLA Breaches</CardTitle>
+            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Delays</CardTitle>
             <Clock className={`h-4 w-4 ${stats.slaBreaches > 0 ? 'text-red-500 animate-pulse' : 'text-muted-foreground'}`} />
           </CardHeader>
           <CardContent>
@@ -168,7 +185,7 @@ export function Dashboard() {
 
         <Card className="border border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Low Stock SKU</CardTitle>
+            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Low Stock Alerts</CardTitle>
             <Package className="h-4 w-4 text-[#fbcc0e]" />
           </CardHeader>
           <CardContent>
@@ -184,8 +201,18 @@ export function Dashboard() {
         {/* Sales Chart */}
         <Card className="lg:col-span-4 border border-border bg-card overflow-hidden">
           <CardHeader>
-            <CardTitle className="text-sm font-semibold text-foreground">Weekly Sales Analytics</CardTitle>
-            <CardDescription className="text-xs text-muted-foreground">B2B Order volume over the last 7 days</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-sm font-semibold text-foreground">Weekly Sales Analytics</CardTitle>
+                <CardDescription className="text-xs text-muted-foreground">Order revenue — last 7 days</CardDescription>
+              </div>
+              <div className="text-right">
+                <p className="text-xs font-black text-foreground">
+                  ₱{chartData.reduce((s, d) => s + d.sales, 0).toLocaleString()}
+                </p>
+                <p className="text-[10px] text-muted-foreground">{chartData.reduce((s, d) => s + d.orders, 0)} orders this week</p>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="h-[240px] px-2 overflow-hidden">
             <ResponsiveContainer width="100%" height={220}>
@@ -202,7 +229,13 @@ export function Dashboard() {
                   tickLine={false}
                   tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
                 />
-                <YAxis hide />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }}
+                  tickFormatter={(v) => v === 0 ? '₱0' : `₱${(v / 1000).toFixed(0)}k`}
+                  width={36}
+                />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: '#1A2332',
@@ -211,6 +244,14 @@ export function Dashboard() {
                     color: '#fff',
                     fontSize: '12px'
                   }}
+                  labelFormatter={(label, payload) => {
+                    const d = payload?.[0]?.payload;
+                    return d ? `${label} (${d.date})` : label;
+                  }}
+                  formatter={(value: number, _name: string, props: any) => [
+                    `₱${value.toLocaleString()} · ${props.payload.orders} order${props.payload.orders !== 1 ? 's' : ''}`,
+                    'Revenue'
+                  ]}
                   itemStyle={{ color: '#fdd001' }}
                 />
                 <Area
@@ -220,6 +261,8 @@ export function Dashboard() {
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#colorSales)"
+                  dot={{ fill: '#fdd001', r: 3, strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: '#fdd001' }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -229,7 +272,7 @@ export function Dashboard() {
         {/* Recent Orders List */}
         <Card className="lg:col-span-3 border border-border bg-card">
           <CardHeader>
-            <CardTitle className="text-sm font-semibold text-foreground">Active Pipeline</CardTitle>
+            <CardTitle className="text-sm font-semibold text-foreground">Orders</CardTitle>
             <CardDescription className="text-xs text-muted-foreground">Live order status monitoring</CardDescription>
           </CardHeader>
           <CardContent>
@@ -265,8 +308,8 @@ export function Dashboard() {
         <Card className="border border-[#fbcc0e]/30 bg-[#fbcc0e]/5 dark:bg-[#fbcc0e]/8">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-[#fbcc0e]" />
-              <CardTitle className="text-sm font-semibold text-[#fbcc0e]">Inventory Depletion Alerts (ITIL CMDB Monitoring)</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+              <CardTitle className="text-sm font-semibold text-red-500">Inventory Depletion Alerts</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
