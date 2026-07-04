@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { db } from '../lib/firebase';
-import { collection, query, onSnapshot, where, getDocs, limit, orderBy } from 'firebase/firestore';
+import { db } from '../lib/supabaseAdapter';
+import { collection, query, onSnapshot, where, getDocs, limit, orderBy } from '../lib/supabaseAdapter';
 import { Order, InventoryItem, Product, Expense } from '../types';
-import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
+import { handleSupabaseError, OperationType } from '../lib/supabaseErrorHandler';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   TrendingUp,
@@ -73,7 +73,7 @@ export function Dashboard() {
       }));
       setLoading(false);
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'orders');
+      handleSupabaseError(error, OperationType.GET, 'orders');
       setLoading(false);
     });
 
@@ -94,7 +94,7 @@ export function Dashboard() {
 
         setLowStockProducts(lowStock);
       } catch (error) {
-        handleFirestoreError(error, OperationType.GET, 'inventory/products');
+        handleSupabaseError(error, OperationType.GET, 'inventory/products');
       }
     };
 

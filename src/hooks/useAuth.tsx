@@ -1,18 +1,8 @@
 import React, { useState, useEffect, useRef, createContext, useContext } from 'react';
-import { 
-  onAuthStateChanged, 
-  User, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  signOut,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail
-} from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { auth, db } from '../lib/firebase';
+import { User } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
 import { UserProfile } from '../types';
-import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
+import { handleSupabaseError, OperationType } from '../lib/supabaseErrorHandler';
 import { toast } from 'sonner';
 
 interface AuthContextType {
@@ -49,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearInactivityTimer();
     if (!currentUser) return;
     inactivityTimer.current = setTimeout(async () => {
-      await signOut(auth);
+      await supabase.auth.signOut();
       toast.warning('Session expired', {
         description: 'You were logged out due to 5 minutes of inactivity.',
         duration: 6000,
@@ -58,59 +48,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      if (user) {
-        try {
-          const docRef = doc(db, 'users', user.uid);
-          const docSnap = await getDoc(docRef);
-          
-          if (docSnap.exists()) {
-            setProfile(docSnap.data() as UserProfile);
-          } else {
-            // If the email is the user's email, set as admin, else default to agent
-            const isAdmin = user.email === 'lancejsy16@gmail.com';
-            const [firstName = '', ...lastNameParts] = (user.displayName || '').split(' ');
-            const lastName = lastNameParts.join(' ');
-            
-            const newProfile: UserProfile = {
-              uid: user.uid,
-              email: user.email || '',
-              displayName: user.displayName || user.email?.split('@')[0] || 'User',
-              firstName,
-              lastName,
-              photoUrl: user.photoURL || '',
-              role: isAdmin ? 'admin' : 'agent'
-            };
-            await setDoc(docRef, newProfile);
-            setProfile(newProfile);
-          }
-        } catch (error) {
-          // Diagnostic logging, but keep fallback logic for UX
-          try {
-            handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
-          } catch (e) {
-            // Just satisfy the JSON throw requirement
-          }
-          // Set a fallback profile to avoid hanging if permission is denied
-          setProfile({
-            uid: user.uid,
-            email: user.email || '',
-            displayName: user.displayName || 'User',
-            role: 'agent'
-          });
-        }
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
-      resetInactivityTimer(user);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      handleUserChange(session?.user ?? null);
     });
 
-    return () => unsubscribe();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      handleUserChange(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Attach activity listeners to reset the inactivity timer
+  const handleUserChange = async (currentUser: User | null) => {
+    setUser(currentUser);
+    if (currentUser) {
+      try {
+        const { data: docSnap, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('uid', currentUser.id)
+          .maybeSingle();
+        
+        if (docSnap && !error) {
+          setProfile(docSnap as UserProfile);
+        } else {
+          // If not found, create one
+          const isAdmin = currentUser.email === 'lancejsy16@gmail.com';
+          const [firstName = '', ...lastNameParts] = (currentUser.user_metadata?.full_name || '').split(' ');
+          const lastName = lastNameParts.join(' ');
+          
+          const newProfile: UserProfile = {
+            uid: currentUser.id,
+            email: currentUser.email || '',
+            displayName: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User',
+            firstName,
+            lastName,
+            photoUrl: currentUser.user_metadata?.avatar_url || '',
+            role: isAdmin ? 'admin' : 'agent'
+          };
+          
+          const { error: insertError } = await supabase.from('users').insert([newProfile]);
+          if (insertError) throw insertError;
+          setProfile(newProfile);
+        }
+      } catch (error) {
+        handleSupabaseError(error, OperationType.GET, `users/${currentUser.id}`);
+        setProfile({
+          uid: currentUser.id,
+          email: currentUser.email || '',
+          displayName: currentUser.user_metadata?.full_name || 'User',
+          role: 'agent'
+        });
+      }
+    } else {
+      setProfile(null);
+    }
+    setLoading(false);
+    resetInactivityTimer(currentUser);
+  };
+
   useEffect(() => {
     const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
     const handleActivity = () => resetInactivityTimer(user);
@@ -127,72 +123,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async () => {
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+      if (error) throw error;
     } catch (error: any) {
-      // Handle known cancellation errors without showing them as critical failures
-      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-        console.warn("Sign-in interaction cancelled by user:", error.code);
-        toast.info('Sign-in cancelled', { 
-          description: 'The authentication process was cancelled.',
-          duration: 3000
-        });
-        return;
-      }
-
       console.error("Sign-in error:", error);
-      if (error.code === 'auth/network-request-failed') {
-        toast.error('Network error', { description: 'Please check your connection and try again.' });
-      } else if (error.code === 'auth/unauthorized-domain') {
-        toast.error('Configuration Required', { 
-          description: 'Please add "localhost" to the Authorized Domains list in your Firebase Console (Authentication > Settings > Authorized domains).',
-          duration: 10000
-        });
-      } else {
-        toast.error('Authentication failed', { description: error.message || 'An unexpected error occurred during sign-in.' });
-      }
+      toast.error('Authentication failed', { description: error.message || 'An unexpected error occurred during sign-in.' });
     }
   };
 
   const signInWithEmail = async (email: string, password: string) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
       toast.success('Logged in successfully');
     } catch (error: any) {
       console.error("Email sign-in error:", error);
-      if (error.code === 'auth/operation-not-allowed') {
-        toast.error('Configuration Required', { 
-          description: 'Email/Password login is not enabled in Firebase Console. Please enable it in Authentication > Sign-in method.' 
-        });
-      } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        toast.error('Invalid credentials', { description: 'Please check your email and password.' });
-      } else {
-        toast.error('Login failed', { description: error.message });
-      }
+      toast.error('Login failed', { description: error.message });
     }
   };
 
   const signUpWithEmail = async (email: string, password: string) => {
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
       toast.success('Account created successfully');
     } catch (error: any) {
       console.error("Email sign-up error:", error);
-      if (error.code === 'auth/operation-not-allowed') {
-        toast.error('Configuration Required', { 
-          description: 'Email/Password registration is not enabled in Firebase Console. Please enable it in Authentication > Sign-in method.' 
-        });
-      } else if (error.code === 'auth/email-already-in-use') {
-        toast.error('Email in use', { description: 'This email is already associated with an account.' });
-      } else {
-        toast.error('Registration failed', { description: error.message });
-      }
+      toast.error('Registration failed', { description: error.message });
     }
   };
 
   const resetPassword = async (email: string) => {
     try {
-      await sendPasswordResetEmail(auth, email);
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) throw error;
       toast.success('Reset email sent', { description: 'Please check your inbox for instructions.' });
     } catch (error: any) {
       console.error("Password reset error:", error);
@@ -201,27 +165,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    await signOut(auth);
+    await supabase.auth.signOut();
   };
 
   const updateRole = async (role: 'admin' | 'secretary' | 'agent') => {
     if (!user) return;
     try {
-      const docRef = doc(db, 'users', user.uid);
-      await updateDoc(docRef, { role });
+      const { error } = await supabase
+        .from('users')
+        .update({ role })
+        .eq('uid', user.id);
+      if (error) throw error;
       setProfile(prev => prev ? { ...prev, role } : null);
       toast.success(`Role switched to ${role.toUpperCase()}`);
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
+      handleSupabaseError(error, OperationType.UPDATE, `users/${user.id}`);
     }
   };
 
   const updateProfileData = async (data: Partial<UserProfile>) => {
     if (!user) return;
     try {
-      const docRef = doc(db, 'users', user.uid);
-      
-      // Compute updated displayName if first/last name changed
       const updatedData = { ...data };
       if (data.firstName || data.lastName) {
         const currentFirstName = data.firstName ?? profile?.firstName ?? '';
@@ -229,26 +193,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updatedData.displayName = `${currentFirstName} ${currentLastName}`.trim() || profile?.displayName || '';
       }
 
-      await updateDoc(docRef, updatedData);
+      const { error } = await supabase
+        .from('users')
+        .update(updatedData)
+        .eq('uid', user.id);
+      
+      if (error) throw error;
       setProfile(prev => prev ? { ...prev, ...updatedData } : null);
       toast.success('Profile updated successfully');
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
+      handleSupabaseError(error, OperationType.UPDATE, `users/${user.id}`);
     }
   };
 
   return (
     <AuthContext.Provider value={{ 
-      user, 
-      profile, 
-      loading, 
-      signIn, 
-      signInWithEmail, 
-      signUpWithEmail, 
-      resetPassword, 
-      logout, 
-      updateRole, 
-      updateProfileData 
+      user, profile, loading, signIn, signInWithEmail, signUpWithEmail, resetPassword, logout, updateRole, updateProfileData 
     }}>
       {children}
     </AuthContext.Provider>

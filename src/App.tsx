@@ -25,9 +25,8 @@ import { DelegationPanel } from './components/DelegationPanel';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from 'sonner';
 import { useEffect } from 'react';
-import { collection, getDocs, addDoc } from 'firebase/firestore';
-import { db } from './lib/firebase';
-import { handleFirestoreError, OperationType } from './lib/firestoreErrorHandler';
+import { supabase } from './lib/supabase';
+import { handleSupabaseError, OperationType } from './lib/supabaseErrorHandler';
 
 function ProtectedRoute({ children, allowedRoles, fallbackPath = "/orders" }: { children: React.ReactNode, allowedRoles?: string[], fallbackPath?: string }) {
   const { user, profile, loading } = useAuth();
@@ -55,13 +54,14 @@ function AppContent() {
     const seedWarehouses = async () => {
       if (profile?.role !== 'admin') return; 
       try {
-        const snap = await getDocs(collection(db, 'warehouses'));
-        if (snap.empty) {
-          await addDoc(collection(db, 'warehouses'), { name: 'Valenzuela A (Main)', location: 'Hub 1' });
-          await addDoc(collection(db, 'warehouses'), { name: 'Valenzuela B (Sub)', location: 'Hub 2' });
+        const { data: snap, error } = await supabase.from('warehouses').select('*');
+        if (error) throw error;
+        if (!snap || snap.length === 0) {
+          await supabase.from('warehouses').insert({ name: 'Valenzuela A (Main)', location: 'Hub 1' });
+          await supabase.from('warehouses').insert({ name: 'Valenzuela B (Sub)', location: 'Hub 2' });
         }
       } catch (e) {
-        handleFirestoreError(e, OperationType.WRITE, 'warehouses');
+        handleSupabaseError(e, OperationType.WRITE, 'warehouses');
       }
     };
     if (user && profile) seedWarehouses();

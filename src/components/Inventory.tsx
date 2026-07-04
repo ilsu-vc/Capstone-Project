@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../lib/firebase';
-import { collection, onSnapshot, query, where, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../lib/supabaseAdapter';
+import { collection, onSnapshot, query, where, addDoc, updateDoc, doc, serverTimestamp } from '../lib/supabaseAdapter';
 import { Product, InventoryItem, Warehouse, StaffDelegation } from '../types';
-import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
+import { handleSupabaseError, OperationType } from '../lib/supabaseErrorHandler';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -46,17 +46,17 @@ export function Inventory() {
     const unsubProducts = onSnapshot(collection(db, 'products'), (snap) => {
       setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'products');
+      handleSupabaseError(error, OperationType.GET, 'products');
     });
     const unsubInventory = onSnapshot(collection(db, 'inventory'), (snap) => {
       setInventory(snap.docs.map(d => ({ id: d.id, ...d.data() } as InventoryItem)));
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'inventory');
+      handleSupabaseError(error, OperationType.GET, 'inventory');
     });
     const unsubWarehouses = onSnapshot(collection(db, 'warehouses'), (snap) => {
       setWarehouses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Warehouse)));
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'warehouses');
+      handleSupabaseError(error, OperationType.GET, 'warehouses');
     });
 
     return () => {
@@ -96,7 +96,7 @@ export function Inventory() {
       setIsAddProductOpen(false);
       toast.success('Product added to CI catalog');
     } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, 'products');
+      handleSupabaseError(err, OperationType.CREATE, 'products');
     }
   };
 
@@ -129,7 +129,7 @@ export function Inventory() {
         setIsStockUpdateOpen(false);
         toast.success('Inventory balance synchronized and adjustment logged');
       } catch (err) {
-        handleFirestoreError(err, OperationType.UPDATE, `inventory/${item.id}`);
+        handleSupabaseError(err, OperationType.UPDATE, `inventory/${item.id}`);
       }
     }
   };

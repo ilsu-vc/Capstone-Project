@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { db } from '../lib/firebase';
-import { collection, onSnapshot, query, where, addDoc, getDocs, serverTimestamp } from 'firebase/firestore';
+import { db } from '../lib/supabaseAdapter';
+import { collection, onSnapshot, query, where, addDoc, getDocs, serverTimestamp } from '../lib/supabaseAdapter';
 import { Product } from '../types';
-import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
+import { handleSupabaseError, OperationType } from '../lib/supabaseErrorHandler';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, Plus } from 'lucide-react';
@@ -39,7 +39,7 @@ export function Pricelist() {
       setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
       setLoading(false);
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'products');
+      handleSupabaseError(error, OperationType.GET, 'products');
       setLoading(false);
     });
 
@@ -76,7 +76,7 @@ export function Pricelist() {
       setIsAddProductOpen(false);
       toast.success('Product added to catalog');
     } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, 'products');
+      handleSupabaseError(err, OperationType.CREATE, 'products');
     }
   };
 

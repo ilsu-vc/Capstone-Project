@@ -75,7 +75,7 @@ export function Auth() {
             <img src="/logo.png" alt="Logo" className="h-16 w-auto object-contain drop-shadow-md" />
           </div>
           <CardTitle className="text-2xl font-black uppercase tracking-tighter">
-            {isResetMode ? 'Recover Identity' : isSignUp ? 'Node Registration' : 'System Access'}
+            {isResetMode ? 'Recover Identity' : isSignUp ? 'Account Sign Up' : 'System Access'}
           </CardTitle>
           {isResetMode && (
             <CardDescription className="text-muted-foreground font-medium text-xs">
@@ -153,7 +153,7 @@ export function Auth() {
                 <div className="w-4 h-4 border-2 border-navy border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  {isResetMode ? 'Send Reset Link' : isSignUp ? 'Provision Node' : 'Login'}
+                  {isResetMode ? 'Send Reset Link' : isSignUp ? 'Sign Up' : 'Login'}
                   <LogIn className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
@@ -218,7 +218,7 @@ export function Auth() {
               {isSignUp ? (
                 <><LogIn className="w-3 h-3" /> Existing user? Log In</>
               ) : (
-                <><UserPlus className="w-3 h-3" /> New personnel? Register Node</>
+                <><UserPlus className="w-3 h-3" /> New personnel? Sign Up</>
               )}
             </button>
           )}

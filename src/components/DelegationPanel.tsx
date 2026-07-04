@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../lib/firebase';
-import { collection, onSnapshot, query, where, addDoc, deleteDoc, doc, serverTimestamp, getDocs } from 'firebase/firestore';
+import { db } from '../lib/supabaseAdapter';
+import { collection, onSnapshot, query, where, addDoc, deleteDoc, doc, serverTimestamp, getDocs } from '../lib/supabaseAdapter';
 import { StaffDelegation, UserProfile } from '../types';
-import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
+import { handleSupabaseError, OperationType } from '../lib/supabaseErrorHandler';
 import { useAuth } from '../hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ export function DelegationPanel() {
     const unsub = onSnapshot(q, (snap) => {
       setDelegations(snap.docs.map(d => ({ id: d.id, ...d.data() } as StaffDelegation)));
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'delegations');
+      handleSupabaseError(error, OperationType.GET, 'delegations');
     });
 
     return () => unsub();
@@ -74,7 +74,7 @@ export function DelegationPanel() {
       setCanAdjustInventory(false);
       setCanAdjustPricelist(false);
     } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, 'delegations');
+      handleSupabaseError(err, OperationType.CREATE, 'delegations');
     } finally {
       setIsLoading(false);
     }
@@ -85,7 +85,7 @@ export function DelegationPanel() {
       await deleteDoc(doc(db, 'delegations', id));
       toast.success('Delegation rights revoked.');
     } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, 'delegations');
+      handleSupabaseError(err, OperationType.DELETE, 'delegations');
     }
   };
 

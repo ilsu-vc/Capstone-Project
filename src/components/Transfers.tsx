@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../lib/firebase';
-import { collection, onSnapshot, addDoc, updateDoc, doc, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { db } from '../lib/supabaseAdapter';
+import { collection, onSnapshot, addDoc, updateDoc, doc, query, orderBy, serverTimestamp } from '../lib/supabaseAdapter';
 import { Transfer, Product, Warehouse, InventoryItem } from '../types';
-import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
+import { handleSupabaseError, OperationType } from '../lib/supabaseErrorHandler';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -27,22 +27,22 @@ export function Transfers() {
     const unsubTransfers = onSnapshot(query(collection(db, 'transfers'), orderBy('createdAt', 'desc')), (snap) => {
       setTransfers(snap.docs.map(d => ({ id: d.id, ...d.data() } as Transfer)));
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'transfers');
+      handleSupabaseError(error, OperationType.GET, 'transfers');
     });
     const unsubProducts = onSnapshot(collection(db, 'products'), (snap) => {
       setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'products');
+      handleSupabaseError(error, OperationType.GET, 'products');
     });
     const unsubWarehouses = onSnapshot(collection(db, 'warehouses'), (snap) => {
       setWarehouses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Warehouse)));
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'warehouses');
+      handleSupabaseError(error, OperationType.GET, 'warehouses');
     });
     const unsubInventory = onSnapshot(collection(db, 'inventory'), (snap) => {
       setInventory(snap.docs.map(d => ({ id: d.id, ...d.data() } as InventoryItem)));
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'inventory');
+      handleSupabaseError(error, OperationType.GET, 'inventory');
     });
 
     return () => {
@@ -88,7 +88,7 @@ export function Transfers() {
       setIsAddTransferOpen(false);
       toast.success('Warehouse transfer request initiated');
     } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, 'transfers');
+      handleSupabaseError(err, OperationType.CREATE, 'transfers');
     }
   };
 
@@ -118,7 +118,7 @@ export function Transfers() {
       });
       toast.success(`Transfer status updated to ${newStatus}`);
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `transfers/${transfer.id}`);
+      handleSupabaseError(err, OperationType.UPDATE, `transfers/${transfer.id}`);
     }
   };
 

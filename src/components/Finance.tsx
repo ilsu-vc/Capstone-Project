@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../lib/firebase';
-import { collection, onSnapshot, addDoc, query, orderBy, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
+import { db } from '../lib/supabaseAdapter';
+import { collection, onSnapshot, addDoc, query, orderBy, serverTimestamp, updateDoc, doc } from '../lib/supabaseAdapter';
 import { Expense, Order, ExpenseCategory } from '../types';
-import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
+import { handleSupabaseError, OperationType } from '../lib/supabaseErrorHandler';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -57,17 +57,17 @@ export function Finance() {
     const unsubExpenses = onSnapshot(query(collection(db, 'expenses'), orderBy('date', 'desc')), (snap) => {
       setExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Expense)));
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'expenses');
+      handleSupabaseError(error, OperationType.GET, 'expenses');
     });
     const unsubOrders = onSnapshot(collection(db, 'orders'), (snap) => {
       setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() } as Order)));
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'orders');
+      handleSupabaseError(error, OperationType.GET, 'orders');
     });
     const unsubCategories = onSnapshot(query(collection(db, 'expenseCategories'), orderBy('createdAt', 'asc')), (snap) => {
       setCategories(snap.docs.map(d => ({ id: d.id, ...d.data() } as ExpenseCategory)));
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'expenseCategories');
+      handleSupabaseError(error, OperationType.GET, 'expenseCategories');
     });
 
     return () => {
@@ -188,7 +188,7 @@ export function Finance() {
       setIsAddExpenseOpen(false);
       toast.success('Operational expense recorded');
     } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, 'expenses');
+      handleSupabaseError(err, OperationType.CREATE, 'expenses');
     }
   };
 
@@ -215,7 +215,7 @@ export function Finance() {
       setEditingExpense(null);
       toast.success('Expense record updated');
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `expenses/${editingExpense.id}`);
+      handleSupabaseError(err, OperationType.UPDATE, `expenses/${editingExpense.id}`);
     }
   };
 
@@ -223,11 +223,11 @@ export function Finance() {
     if (!confirm('Are you sure you want to delete this expense record? This action is permanent.')) return;
     try {
       // For deletion we reach for a lower-level UI but here we just use native confirm for safety
-      const { deleteDoc } = await import('firebase/firestore');
+      const { deleteDoc } = await import('../lib/supabaseAdapter');
       await deleteDoc(doc(db, 'expenses', id));
       toast.success('Expense record deleted');
     } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, `expenses/${id}`);
+      handleSupabaseError(err, OperationType.DELETE, `expenses/${id}`);
     }
   };
 
@@ -254,7 +254,7 @@ export function Finance() {
       setIsAddCategoryOpen(false);
       toast.success('Expense category added');
     } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, 'expenseCategories');
+      handleSupabaseError(err, OperationType.CREATE, 'expenseCategories');
     }
   };
 
@@ -268,7 +268,7 @@ export function Finance() {
       });
       toast.success(`Category ${category.isActive ? 'archived' : 'activated'} successfully`);
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `expenseCategories/${category.id}`);
+      handleSupabaseError(err, OperationType.UPDATE, `expenseCategories/${category.id}`);
     }
   };
 
@@ -294,7 +294,7 @@ export function Finance() {
       setEditingCategory(null);
       toast.success('Category updated successfully');
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `expenseCategories/${editingCategory.id}`);
+      handleSupabaseError(err, OperationType.UPDATE, `expenseCategories/${editingCategory.id}`);
     }
   };
 

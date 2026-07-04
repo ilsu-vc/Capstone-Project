@@ -131,7 +131,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {profile?.displayName || 'User'}
               </span>
               <span className="text-[9px] text-sidebar-primary uppercase font-bold tracking-widest mt-0.5">
-                {profile?.role} Node
+                {profile?.role} PORTAL
               </span>
             </div>
           )}
@@ -143,26 +143,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </Link>
 
 
-        {/* Dev role controls */}
-        {!isCollapsed && (
-          <div className="px-1 mb-3 space-y-1">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-sidebar-foreground/25 mb-2 px-1">Dev Controls</p>
-            <div className="grid grid-cols-3 gap-1">
-              {(['admin', 'secretary', 'agent'] as const).map((role, i) => (
-                <button
-                  key={role}
-                  className={`h-7 text-[9px] font-bold rounded-md transition-all ${profile?.role === role
-                      ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                      : 'bg-sidebar-foreground/8 text-sidebar-foreground/50 hover:bg-sidebar-foreground/15 hover:text-sidebar-foreground'
-                    }`}
-                  onClick={() => updateRole(role)}
-                >
-                  {['ADM', 'SEC', 'AGT'][i]}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+
 
         <Separator className="mb-3 bg-sidebar-border" />
 

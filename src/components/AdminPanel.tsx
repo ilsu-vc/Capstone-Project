@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { db } from '../lib/firebase';
-import { collection, query, onSnapshot, getDocs, limit, orderBy } from 'firebase/firestore';
+import { db } from '../lib/supabaseAdapter';
+import { collection, query, onSnapshot, getDocs, limit, orderBy } from '../lib/supabaseAdapter';
 import { Order, UserProfile, Product } from '../types';
-import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
+import { handleSupabaseError, OperationType } from '../lib/supabaseErrorHandler';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
   TrendingUp, 
@@ -80,7 +80,7 @@ export function AdminPanel() {
         setLoading(false);
         return () => ordersUnsubscribe();
       } catch (error) {
-        handleFirestoreError(error, OperationType.GET, 'admin_data');
+        handleSupabaseError(error, OperationType.GET, 'admin_data');
         setLoading(false);
       }
     };

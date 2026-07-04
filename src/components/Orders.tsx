@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { db, storage } from '../lib/firebase';
+import { db, storage } from '../lib/supabaseAdapter';
 import { 
   collection, 
   onSnapshot, 
@@ -13,9 +13,9 @@ import {
   getDocs, 
   writeBatch,
   arrayUnion
-} from 'firebase/firestore';
+} from '../lib/supabaseAdapter';
 import { Order, OrderStatus, Product, InventoryItem, OrderItem, StatusHistoryEntry } from '../types';
-import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
+import { handleSupabaseError, OperationType } from '../lib/supabaseErrorHandler';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -87,19 +87,19 @@ export function Orders() {
     const unsubOrders = onSnapshot(q, (snap) => {
       setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() } as Order)));
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'orders');
+      handleSupabaseError(error, OperationType.GET, 'orders');
     });
 
     const unsubProducts = onSnapshot(collection(db, 'products'), (snap) => {
       setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'products');
+      handleSupabaseError(error, OperationType.GET, 'products');
     });
 
     const unsubInventory = onSnapshot(collection(db, 'inventory'), (snap) => {
       setInventory(snap.docs.map(d => ({ id: d.id, ...d.data() } as InventoryItem)));
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'inventory');
+      handleSupabaseError(error, OperationType.GET, 'inventory');
     });
 
     return () => {
@@ -235,7 +235,7 @@ export function Orders() {
       };
       
       // Use setDoc for the order directly
-      await import('firebase/firestore').then(({ setDoc }) => setDoc(orderRef, orderData));
+      await import('../lib/supabaseAdapter').then(({ setDoc }) => setDoc(orderRef, orderData));
 
       // 5. Commit Items in a batch (the order now exists, so get() will work in rules)
       const itemsBatch = writeBatch(db);
@@ -282,7 +282,7 @@ export function Orders() {
       setIsNewOrderOpen(false);
     } catch (err) {
       toast.dismiss(loadingToast);
-      handleFirestoreError(err, OperationType.CREATE, 'orders');
+      handleSupabaseError(err, OperationType.CREATE, 'orders');
     }
   };
 
@@ -329,7 +329,7 @@ export function Orders() {
       });
       toast.success(`Order moving to ${newStatus}`);
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `orders/${order.id}`);
+      handleSupabaseError(err, OperationType.UPDATE, `orders/${order.id}`);
     }
   };
 
@@ -342,7 +342,7 @@ export function Orders() {
       const items = itemsSnap.docs.map(d => ({ id: d.id, ...d.data() } as OrderItem));
       setOrderItems(items);
     } catch (err) {
-      handleFirestoreError(err, OperationType.GET, `orders/${order.id}/items`);
+      handleSupabaseError(err, OperationType.GET, `orders/${order.id}/items`);
     } finally {
       setIsLoadingItems(false);
     }
@@ -353,7 +353,7 @@ export function Orders() {
     setIsUploading(true);
     try {
       // Upload file to Firebase Storage
-      const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+      const { ref, uploadBytes, getDownloadURL } = await import('../lib/supabaseAdapter');
       const filePath = `dispatch-proofs/${dispatchOrder.id}_${Date.now()}_${photoFile.name}`;
       const storageRef = ref(storage, filePath);
       await uploadBytes(storageRef, photoFile);
@@ -377,7 +377,7 @@ export function Orders() {
       setPhotoUrl('');
       toast.success('Inventory dispatched for delivery');
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `orders/${dispatchOrder.id}`);
+      handleSupabaseError(err, OperationType.UPDATE, `orders/${dispatchOrder.id}`);
     } finally {
       setIsUploading(false);
     }
