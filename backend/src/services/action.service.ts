@@ -17,13 +17,12 @@
  *     createSnapshot(sessionId, label, treeJson) → WorkspaceSnapshot
  */
 
-import { OperationType, SessionStatus } from '@prisma/client';
+import { OperationType, SessionStatus, Prisma } from '@prisma/client';
 import prisma from '../db/prisma.client';
 import type {
   AgentSession,
   ActionLog,
   WorkspaceSnapshot,
-  Prisma,
 } from '@prisma/client';
 import { AppError } from '../middleware/errorHandler';
 import { FRONTEND_ROOT } from '../config/paths';

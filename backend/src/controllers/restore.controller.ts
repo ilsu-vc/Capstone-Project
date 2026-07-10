@@ -90,10 +90,10 @@ export async function restoreBackup(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { id } = req.params;
+    const id = req.params['id'] as string;
     const sessionId = (req.body as { sessionId?: string })?.sessionId;
 
-    const updated = await backupService.restoreBackup(id!);
+    const updated = await backupService.restoreBackup(id);
 
     const result: RestoreResult = {
       backupId:   updated.id,

@@ -92,7 +92,7 @@ export async function getSession(
   next: NextFunction
 ): Promise<void> {
   try {
-    const session = await actionService.getSession(req.params['id']!);
+    const session = await actionService.getSession(req.params['id'] as string);
     ok(res, session);
   } catch (err) {
     next(err);
@@ -111,7 +111,7 @@ export async function updateSession(
 ): Promise<void> {
   try {
     const { name, status, notes } = req.body as UpdateSessionPayload;
-    const session = await actionService.updateSession(req.params['id']!, {
+    const session = await actionService.updateSession(req.params['id'] as string, {
       name,
       status: status as any,
       notes,
@@ -135,7 +135,7 @@ export async function listActions(
   try {
     const page     = Math.max(1, parseInt(req.query['page']     as string ?? '1',  10));
     const pageSize = Math.min(200, parseInt(req.query['pageSize'] as string ?? '50', 10));
-    const { actions, total } = await actionService.listActions(req.params['id']!, page, pageSize);
+    const { actions, total } = await actionService.listActions(req.params['id'] as string, page, pageSize);
 
     ok(res, {
       items: actions,
@@ -177,14 +177,14 @@ export async function createSnapshot(
     const { tree } = fileService.getDirectoryTree();
 
     const snapshot = await actionService.createSnapshot(
-      req.params['id']!,
+      req.params['id'] as string,
       label.trim(),
       tree as object
     );
 
     // Log the snapshot as an action
     await actionService.logAction({
-      sessionId:  req.params['id']!,
+      sessionId:  req.params['id'] as string,
       operation:  'SNAPSHOT',
       targetPath: '.',
       success:    true,
