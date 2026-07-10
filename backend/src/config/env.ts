@@ -35,7 +35,7 @@ const EnvSchema = z.object({
    */
   FRONTEND_ROOT: z
     .string()
-    .min(1, 'FRONTEND_ROOT is required — set the absolute path to the frontend project'),
+    .default(path.resolve(__dirname, '../../..')),
 
   /** Comma-separated CORS origins (e.g. "http://localhost:3000") */
   CORS_ORIGINS: z
