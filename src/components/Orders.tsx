@@ -468,7 +468,7 @@ export function Orders() {
               
               <div className="bg-muted rounded-xl p-4 flex flex-col border border-border">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-900">Current Cart</h4>
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-black dark:text-white">Current Cart</h4>
                   <Badge variant="secondary" className="text-[10px]">{cart.length} Items</Badge>
                 </div>
                 <div className="flex-1 space-y-3 mb-4 overflow-y-auto pr-2">
@@ -496,7 +496,7 @@ export function Orders() {
                 <div className="pt-4 border-top border-zinc-200 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Grand Total</span>
-                    <span className="text-xl font-black text-zinc-900">₱{cart.reduce((s, i) => s + (i.price * i.quantity), 0).toLocaleString()}</span>
+                    <span className="text-xl font-black text-black dark:text-white">₱{cart.reduce((s, i) => s + (i.price * i.quantity), 0).toLocaleString()}</span>
                   </div>
                   <Button className="w-full h-11 bg-[#1A2332] text-white font-bold" disabled={cart.length === 0 || !clientInfo.name} onClick={submitOrder}>
                     Confirm and Queue Order
