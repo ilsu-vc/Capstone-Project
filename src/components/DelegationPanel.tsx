@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/supabaseAdapter';
-import { collection, onSnapshot, query, where, addDoc, deleteDoc, doc, serverTimestamp, getDocs } from '../lib/supabaseAdapter';
+import { collection, onSnapshot, query, where, addDoc, deleteDoc, doc, serverTimestamp, getDocs, updateDoc } from '../lib/supabaseAdapter';
 import { StaffDelegation, UserProfile } from '../types';
 import { handleSupabaseError, OperationType } from '../lib/supabaseErrorHandler';
 import { useAuth } from '../hooks/useAuth';
@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Shield, Plus, Trash2, ShieldAlert, Key } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Shield, Plus, Trash2, ShieldAlert, Key, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function DelegationPanel() {
@@ -21,8 +22,14 @@ export function DelegationPanel() {
   const [canAdjustPricelist, setCanAdjustPricelist] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Edit dialog state
+  const [editTarget, setEditTarget] = useState<StaffDelegation | null>(null);
+  const [editInventory, setEditInventory] = useState(false);
+  const [editPricelist, setEditPricelist] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
   useEffect(() => {
-    if (!profile || (profile.role !== 'agent' && profile.role !== 'admin')) return;
+    if (!profile || profile.role !== 'admin') return;
 
     const q = profile.role === 'admin' 
       ? query(collection(db, 'delegations'))
@@ -89,7 +96,30 @@ export function DelegationPanel() {
     }
   };
 
-  if (profile?.role !== 'agent' && profile?.role !== 'admin') {
+  const openEdit = (d: StaffDelegation) => {
+    setEditTarget(d);
+    setEditInventory(d.canAdjustInventory);
+    setEditPricelist(d.canAdjustPricelist);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editTarget) return;
+    setIsSaving(true);
+    try {
+      await updateDoc(doc(db, 'delegations', editTarget.id), {
+        canAdjustInventory: editInventory,
+        canAdjustPricelist: editPricelist,
+      });
+      toast.success('Permissions updated successfully.');
+      setEditTarget(null);
+    } catch (err) {
+      handleSupabaseError(err, OperationType.UPDATE, 'delegations');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (profile?.role !== 'admin') {
     return (
       <div className="flex flex-col items-center justify-center h-[50vh] text-center space-y-4">
         <ShieldAlert className="w-16 h-16 text-muted-foreground opacity-50" />
@@ -173,7 +203,7 @@ export function DelegationPanel() {
           <CardHeader>
             <CardTitle className="text-sm font-black uppercase tracking-widest">Active Delegations</CardTitle>
             <CardDescription className="text-[10px] uppercase font-bold tracking-widest">
-              Staff members with elevated access.
+              Staff members with elevated access. Click an email to edit permissions.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -190,7 +220,12 @@ export function DelegationPanel() {
                 <TableBody>
                   {delegations.map(d => (
                     <TableRow key={d.id}>
-                      <TableCell className="font-medium text-xs">{d.staffEmail}</TableCell>
+                      <TableCell
+                        className="font-medium text-xs text-primary underline-offset-2 hover:underline cursor-pointer"
+                        onClick={() => openEdit(d)}
+                      >
+                        {d.staffEmail}
+                      </TableCell>
                       <TableCell>
                         <span className={`text-[10px] font-black uppercase tracking-widest ${d.canAdjustInventory ? 'text-emerald-500' : 'text-muted-foreground'}`}>
                           {d.canAdjustInventory ? 'Granted' : 'Denied'}
@@ -202,14 +237,24 @@ export function DelegationPanel() {
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleRevoke(d.id)}
-                          className="text-red-500 hover:text-red-600 hover:bg-red-500/10 h-8 text-[10px] font-black uppercase tracking-widest"
-                        >
-                          <Trash2 className="w-3 h-3 mr-2" /> Revoke
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => openEdit(d)}
+                            className="text-muted-foreground hover:text-foreground h-8 text-[10px] font-black uppercase tracking-widest"
+                          >
+                            <Pencil className="w-3 h-3 mr-2" /> Edit
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleRevoke(d.id)}
+                            className="text-red-500 hover:text-red-600 hover:bg-red-500/10 h-8 text-[10px] font-black uppercase tracking-widest"
+                          >
+                            <Trash2 className="w-3 h-3 mr-2" /> Revoke
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -226,6 +271,53 @@ export function DelegationPanel() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Permissions Dialog */}
+      <Dialog open={!!editTarget} onOpenChange={(open) => { if (!open) setEditTarget(null); }}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+              <Pencil className="w-4 h-4 text-primary" /> Edit Permissions
+            </DialogTitle>
+            <DialogDescription className="text-xs font-medium">
+              Updating access rights for <span className="font-black text-foreground">{editTarget?.staffEmail}</span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-4">
+            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Permissions</Label>
+            <div className="flex items-center space-x-2 bg-muted/50 p-3 rounded-lg border border-border">
+              <input 
+                type="checkbox" 
+                id="editInvAccess" 
+                checked={editInventory}
+                onChange={(e) => setEditInventory(e.target.checked)}
+                className="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4"
+              />
+              <Label htmlFor="editInvAccess" className="text-xs font-bold cursor-pointer">Can Adjust Inventory</Label>
+            </div>
+            <div className="flex items-center space-x-2 bg-muted/50 p-3 rounded-lg border border-border">
+              <input 
+                type="checkbox" 
+                id="editPriceAccess" 
+                checked={editPricelist}
+                onChange={(e) => setEditPricelist(e.target.checked)}
+                className="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4"
+              />
+              <Label htmlFor="editPriceAccess" className="text-xs font-bold cursor-pointer">Can Edit Pricelist</Label>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setEditTarget(null)} className="font-black uppercase tracking-widest text-[10px]">
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={isSaving} className="font-black uppercase tracking-widest text-[10px]">
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

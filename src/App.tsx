@@ -67,14 +67,16 @@ function AppContent() {
     if (user && profile) seedWarehouses();
   }, [user, profile]);
 
+  const defaultPath = profile?.role === 'admin' ? '/admin' : '/dashboard';
+
   return (
     <Routes>
       {/* Root: always redirect — never show the landing page on open */}
-      <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
+      <Route path="/" element={<Navigate to={user ? defaultPath : "/login"} replace />} />
 
       {/* Auth routes — redirect to dashboard if already logged in */}
-      <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Auth />} />
-      <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <Auth />} />
+      <Route path="/login" element={user ? <Navigate to={defaultPath} replace /> : <Auth />} />
+      <Route path="/signup" element={user ? <Navigate to={defaultPath} replace /> : <Auth />} />
 
       {/* Public informational pages — kept accessible without login */}
       <Route path="/about" element={<About />} />
@@ -82,7 +84,7 @@ function AppContent() {
       <Route path="/terms" element={<Terms />} />
 
       {/* Onboarding — only for unauthenticated users */}
-      <Route path="/onboarding" element={user ? <Navigate to="/dashboard" replace /> : <Onboarding />} />
+      <Route path="/onboarding" element={user ? <Navigate to={defaultPath} replace /> : <Onboarding />} />
       
       <Route path="/dashboard" element={
         <ProtectedRoute allowedRoles={['admin', 'secretary', 'agent', 'staff']}>
@@ -144,8 +146,8 @@ function AppContent() {
         </ProtectedRoute>
       } />
 
-      {/* Catch-all: send unauthenticated users to login, authenticated to dashboard */}
-      <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
+      {/* Catch-all: send unauthenticated users to login, authenticated to defaultPath */}
+      <Route path="*" element={<Navigate to={user ? defaultPath : "/login"} replace />} />
     </Routes>
   );
 }

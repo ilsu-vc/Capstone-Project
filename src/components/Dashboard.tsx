@@ -121,7 +121,7 @@ export function Dashboard() {
       });
 
       return {
-        name: days[d.getDay()],
+        name: `${days[d.getDay()]} ${d.getMonth() + 1}/${d.getDate()}`,
         date: `${d.getMonth() + 1}/${d.getDate()}`,
         sales: dayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0),
         orders: dayOrders.length,

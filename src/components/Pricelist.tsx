@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../lib/supabaseAdapter';
-import { collection, onSnapshot, query, where, addDoc, getDocs, serverTimestamp } from '../lib/supabaseAdapter';
+import { collection, onSnapshot, query, where, addDoc, getDocs, serverTimestamp, updateDoc, doc } from '../lib/supabaseAdapter';
 import { Product } from '../types';
 import { handleSupabaseError, OperationType } from '../lib/supabaseErrorHandler';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, Pencil } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -20,6 +20,10 @@ export function Pricelist() {
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const { profile } = useAuth();
   const [hasDelegatedAccess, setHasDelegatedAccess] = useState(false);
+
+  // Edit dialog state
+  const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const isAdmin = profile?.role === 'admin';
   const canEditPricelist = isAdmin || hasDelegatedAccess;
@@ -77,6 +81,29 @@ export function Pricelist() {
       toast.success('Product added to catalog');
     } catch (err) {
       handleSupabaseError(err, OperationType.CREATE, 'products');
+    }
+  };
+
+  const handleEditProduct = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editProduct) return;
+    setIsSaving(true);
+    const formData = new FormData(e.currentTarget);
+    try {
+      await updateDoc(doc(db, 'products', editProduct.id), {
+        name: formData.get('editName'),
+        category: formData.get('editCategory'),
+        basePrice: Number(formData.get('editBasePrice')),
+        wholesalePrice: Number(formData.get('editWholesalePrice')),
+        dealerPrice: Number(formData.get('editDealerPrice')),
+        updatedAt: new Date(),
+      });
+      toast.success('Product updated successfully.');
+      setEditProduct(null);
+    } catch (err) {
+      handleSupabaseError(err, OperationType.UPDATE, 'products');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -194,10 +221,13 @@ export function Pricelist() {
                       <TableHeader className="bg-muted/50">
                         <TableRow>
                           <TableHead className="w-[120px] text-[10px] font-bold uppercase tracking-widest min-w-[120px]">Item Code</TableHead>
-                          <TableHead className="text-[10px] font-bold uppercase tracking-widest text-zinc-900 min-w-[200px]">Product Name</TableHead>
+                          <TableHead className="text-[10px] font-bold uppercase tracking-widest text-foreground min-w-[200px]">Product Name</TableHead>
                           <TableHead className="text-right text-[10px] font-bold uppercase tracking-widest min-w-[100px]">Base Price</TableHead>
                           <TableHead className="text-right text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 min-w-[100px]">Wholesale</TableHead>
                           <TableHead className="text-right text-[10px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400 min-w-[100px]">Dealer</TableHead>
+                          {canEditPricelist && (
+                            <TableHead className="text-right text-[10px] font-bold uppercase tracking-widest min-w-[80px]">Edit</TableHead>
+                          )}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -208,6 +238,18 @@ export function Pricelist() {
                             <TableCell className="text-right font-medium">₱{p.basePrice?.toLocaleString() || '0'}</TableCell>
                             <TableCell className="text-right font-bold text-emerald-600 dark:text-emerald-400">₱{p.wholesalePrice?.toLocaleString() || '0'}</TableCell>
                             <TableCell className="text-right font-bold text-blue-600 dark:text-blue-400">₱{p.dealerPrice?.toLocaleString() || '0'}</TableCell>
+                            {canEditPricelist && (
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setEditProduct(p)}
+                                  className="h-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground"
+                                >
+                                  <Pencil className="w-3 h-3 mr-1" /> Edit
+                                </Button>
+                              </TableCell>
+                            )}
                           </TableRow>
                         ))}
                       </TableBody>
@@ -219,6 +261,52 @@ export function Pricelist() {
           })}
         </Tabs>
       )}
+
+      {/* Edit Product Dialog */}
+      <Dialog open={!!editProduct} onOpenChange={(open) => { if (!open) setEditProduct(null); }}>
+        <DialogContent className="max-w-2xl rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="w-4 h-4 text-primary" /> Edit Product
+            </DialogTitle>
+            <DialogDescription>
+              Update pricing and details for <span className="font-black text-foreground">{editProduct?.name}</span>
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditProduct} className="space-y-4 pt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="editName">Item Name</Label>
+                <Input id="editName" name="editName" required defaultValue={editProduct?.name} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editCategory">Category</Label>
+                <Input id="editCategory" name="editCategory" defaultValue={editProduct?.category} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editBasePrice">Base Cost (₱)</Label>
+                <Input id="editBasePrice" name="editBasePrice" type="number" step="0.01" required defaultValue={editProduct?.basePrice} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editWholesalePrice">Wholesale (₱)</Label>
+                <Input id="editWholesalePrice" name="editWholesalePrice" type="number" step="0.01" defaultValue={editProduct?.wholesalePrice} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editDealerPrice">Dealer (₱)</Label>
+                <Input id="editDealerPrice" name="editDealerPrice" type="number" step="0.01" defaultValue={editProduct?.dealerPrice} />
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button type="button" variant="outline" onClick={() => setEditProduct(null)} className="font-black uppercase tracking-widest text-[10px]">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSaving} className="font-black uppercase tracking-widest text-[10px]">
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

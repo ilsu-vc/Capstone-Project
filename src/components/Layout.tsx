@@ -37,7 +37,7 @@ const navigation = [
   { name: 'Financials', href: '/finance', icon: DollarSign, roles: ['admin'] },
   { name: 'Logistics Optimizer', href: '/logistics', icon: Activity, roles: ['admin', 'secretary'] },
   { name: 'Pricelist', href: '/pricelist', icon: Tag, roles: ['admin', 'secretary', 'agent', 'staff'] },
-  { name: 'Staff Delegation', href: '/delegation', icon: UserCog, roles: ['admin', 'agent'] },
+  { name: 'Staff Delegation', href: '/delegation', icon: UserCog, roles: ['admin'] },
   { name: 'Settings', href: '/settings', icon: Settings, roles: ['admin', 'secretary', 'agent', 'staff'] },
 ];
 

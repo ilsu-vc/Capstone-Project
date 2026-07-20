@@ -43,12 +43,10 @@ export function Settings() {
     const formData = new FormData(e.currentTarget);
     const firstName = formData.get('firstName') as string;
     const lastName = formData.get('lastName') as string;
-    const photoUrl = formData.get('photoUrl') as string;
 
     await updateProfileData({
       firstName,
-      lastName,
-      photoUrl
+      lastName
     });
     setIsEditProfileOpen(false);
   };
@@ -110,17 +108,10 @@ export function Settings() {
                         <Input id="lastName" name="lastName" defaultValue={profile?.lastName} required className="rounded-xl border-2 border-border h-12 focus:border-primary transition-all font-bold" />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="photoUrl" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Avatar URL</Label>
-                      <div className="relative">
-                        <Input id="photoUrl" name="photoUrl" defaultValue={profile?.photoUrl} placeholder="https://..." className="rounded-xl border-2 border-border h-12 pl-10 focus:border-primary transition-all font-medium" />
-                        <ImageIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      </div>
-                      <p className="text-[9px] text-muted-foreground font-medium italic">Direct link to a JPEG/PNG node for regional display.</p>
-                    </div>
+
                     <DialogFooter className="pt-4">
                       <Button type="submit" className="w-full h-14 bg-primary text-primary-foreground font-black uppercase tracking-widest text-xs rounded-2xl group">
-                        Propagate Changes <CheckCircle className="w-4 h-4 ml-2 group-hover:scale-110 transition-transform" />
+                       Confirm <CheckCircle className="w-4 h-4 ml-2 group-hover:scale-110 transition-transform" />
                       </Button>
                     </DialogFooter>
                   </form>

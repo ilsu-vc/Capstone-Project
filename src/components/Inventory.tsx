@@ -26,6 +26,7 @@ export function Inventory() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isStockUpdateOpen, setIsStockUpdateOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
 
   const [hasDelegatedAccess, setHasDelegatedAccess] = useState(false);
 
@@ -153,7 +154,7 @@ export function Inventory() {
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
           <Input 
-            placeholder="Search by SKU or Name..." 
+            placeholder="Search by Name..." 
             className="pl-9 h-10 border-border bg-background"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -163,7 +164,7 @@ export function Inventory() {
           {isAdmin && (
             <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
               <DialogTrigger className="h-10 gap-2 px-4 bg-[#1A2332] text-white rounded-lg inline-flex items-center justify-center font-medium transition-all hover:bg-[#1A2332]/90">
-                <Plus className="w-4 h-4" /> Add Product CI
+                <Plus className="w-4 h-4" /> Add Product
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
@@ -221,7 +222,7 @@ export function Inventory() {
             <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead className="w-[100px] text-[10px] font-bold uppercase tracking-widest min-w-[100px]">SKU</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-zinc-900 min-w-[200px]">Item Details</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-foreground min-w-[200px]">Item Details</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase tracking-widest min-w-[120px]">Pricing (Base)</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase tracking-widest text-center min-w-[120px]">Total Stock</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase tracking-widest min-w-[150px]">Warehouse Sync</TableHead>
@@ -244,7 +245,7 @@ export function Inventory() {
                     <TableCell className="font-mono text-xs text-zinc-500 font-medium">{p.sku}</TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="text-sm font-bold text-zinc-900">{p.name}</span>
+                        <span className="text-sm font-bold text-foreground">{p.name}</span>
                         <span className="text-[10px] text-zinc-400 font-medium uppercase">{p.category}</span>
                       </div>
                     </TableCell>
@@ -325,9 +326,11 @@ export function Inventory() {
           <form onSubmit={updateStock} className="space-y-4 pt-4">
             <div className="space-y-2">
               <Label>Target Warehouse</Label>
-              <Select name="warehouseId" required>
+              <Select name="warehouseId" required value={selectedWarehouseId} onValueChange={setSelectedWarehouseId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select warehouse..." />
+                  <SelectValue placeholder="Select warehouse...">
+                    {selectedWarehouseId ? warehouses.find(w => w.id === selectedWarehouseId)?.name : 'Select warehouse...'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {warehouses.map(wh => (
@@ -405,7 +408,7 @@ export function Inventory() {
 
               <div>
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2 block">Pricing Tiers (₱)</Label>
-                <div className="bg-foreground rounded-2xl p-4 text-background space-y-3">
+                <div className="bg-muted rounded-2xl p-4 border border-border text-foreground space-y-3">
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground font-medium">Base Acquisition</span>
                     <span className="font-black">₱{selectedProduct?.basePrice.toLocaleString()}</span>
@@ -443,7 +446,7 @@ export function Inventory() {
 
               <div className="pt-4 border-t border-dashed border-border">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs font-black uppercase tracking-widest text-zinc-900">Aggregate Global Inventory</span>
+                  <span className="text-xs font-black uppercase tracking-widest text-foreground">Aggregate Global Inventory</span>
                   <Badge className="bg-emerald-500 font-black h-8 px-4 rounded-xl">
                     {selectedProduct ? getStockCount(selectedProduct.id) : 0} UNITS TOTAL
                   </Badge>

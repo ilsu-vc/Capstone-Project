@@ -89,13 +89,22 @@ export function AdminPanel() {
   }, [profile]);
 
   // Derived data for Weekly Bar Chart (Mocking weights for visual appeal if live data is thin)
-  const barChartData = [
-    { name: 'Mon', orders: 12, revenue: 45000 },
-    { name: 'Tue', orders: 19, revenue: 72000 },
-    { name: 'Wed', orders: 15, revenue: 58000 },
-    { name: 'Thu', orders: 22, revenue: 89000 },
-    { name: 'Fri', orders: 30, revenue: 124000 },
-  ];
+  const barChartData = (() => {
+    const daysArr = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = new Date();
+    const mockOrders = [12, 19, 15, 22, 30];
+    const mockRevenue = [45000, 72000, 58000, 89000, 124000];
+    
+    return Array.from({ length: 5 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - (4 - i));
+      return {
+        name: `${daysArr[d.getDay()]} ${d.getMonth() + 1}/${d.getDate()}`,
+        orders: mockOrders[i],
+        revenue: mockRevenue[i],
+      };
+    });
+  })();
 
   if (loading) {
     return (
