@@ -215,7 +215,49 @@ export function Pricelist() {
             
             return (
               <TabsContent key={category} value={category} className="mt-0">
-                <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                {/* Mobile Card View */}
+                <div className="lg:hidden space-y-3">
+                  {categoryProducts.map((p) => (
+                    <div key={p.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-foreground">{p.name}</p>
+                          <p className="text-[10px] font-mono text-zinc-500 mt-0.5">{p.sku}</p>
+                        </div>
+                        {canEditPricelist && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditProduct(p)}
+                            className="shrink-0 h-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground"
+                          >
+                            <Pencil className="w-3 h-3 mr-1" /> Edit
+                          </Button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border">
+                        <div className="text-center">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1">Base</p>
+                          <p className="text-xs font-bold">₱{p.basePrice?.toLocaleString() || '0'}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-1">Wholesale</p>
+                          <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">₱{p.wholesalePrice?.toLocaleString() || '0'}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 mb-1">Dealer</p>
+                          <p className="text-xs font-bold text-blue-600 dark:text-blue-400">₱{p.dealerPrice?.toLocaleString() || '0'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {categoryProducts.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground text-xs italic">No products in this category.</div>
+                  )}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden lg:block bg-card border border-border rounded-xl overflow-hidden shadow-sm">
                   <div className="overflow-x-auto w-full">
                     <Table>
                       <TableHeader className="bg-muted/50">

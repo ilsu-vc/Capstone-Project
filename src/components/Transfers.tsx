@@ -124,7 +124,7 @@ export function Transfers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div className="flex flex-col">
           <h2 className="text-xl font-bold tracking-tight text-foreground">Warehouse Transfer Log</h2>
           <p className="text-xs text-muted-foreground font-medium tracking-tight">Managing stock movement between Valenzuela facilities</p>
@@ -192,7 +192,61 @@ export function Transfers() {
         </Dialog>
       </div>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Mobile Card View */}
+      <div className="lg:hidden space-y-3">
+        {transfers.map((t) => {
+          const product = products.find(p => p.id === t.productId);
+          const source = warehouses.find(w => w.id === t.sourceWarehouseId);
+          const dest = warehouses.find(w => w.id === t.destinationWarehouseId);
+          return (
+            <div key={t.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-xs font-black text-foreground">{product?.name || 'Unknown'}</p>
+                  <p className="text-[10px] font-mono text-zinc-400 uppercase tracking-tighter">TFR-{t.id.slice(-6)}</p>
+                </div>
+                <Badge variant="outline" className={`shrink-0 gap-1.5 h-6 capitalize text-[10px] font-black ${
+                  t.status === 'received' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30' :
+                  t.status === 'in_transit' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' :
+                  'bg-amber-500/10 text-amber-500 border-amber-500/30'
+                }`}>
+                  {t.status === 'pending' && <Clock className="w-3 h-3" />}
+                  {t.status === 'in_transit' && <Truck className="w-3 h-3" />}
+                  {t.status === 'received' && <CheckCircle2 className="w-3 h-3" />}
+                  {t.status.replace('_', ' ')}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] font-bold text-foreground">
+                <span className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{source?.name}</span>
+                <ArrowRightLeft className="w-3 h-3 text-muted-foreground/40" />
+                <span className="bg-[#1A2332] text-white px-1.5 py-0.5 rounded">{dest?.name}</span>
+                <span className="ml-auto text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Qty: {t.quantity}</span>
+              </div>
+              <div className="flex justify-end gap-2">
+                {t.status === 'pending' && (
+                  <Button size="sm" variant="ghost" className="text-xs font-bold h-8" onClick={() => updateStatus(t, 'in_transit')}>
+                    Dispatch
+                  </Button>
+                )}
+                {t.status === 'in_transit' && (
+                  <Button size="sm" variant="ghost" className="text-xs font-bold h-8 text-emerald-500 hover:bg-emerald-500/10" onClick={() => updateStatus(t, 'received')}>
+                    Confirm Arrival
+                  </Button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        {transfers.length === 0 && (
+          <div className="flex flex-col items-center justify-center gap-2 py-12">
+            <History className="w-8 h-8 text-muted-foreground/30" />
+            <p className="text-xs font-medium text-muted-foreground">No active transfers tracked</p>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden lg:block bg-card border border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto w-full">
           <Table>
             <TableHeader className="bg-muted/50">

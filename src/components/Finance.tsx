@@ -337,7 +337,7 @@ export function Finance() {
   return (
     <div className="space-y-8">
       {/* Financial Health Summary */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
         <Card className="border-emerald-500/30 bg-emerald-50/20 dark:bg-emerald-950/20 dark:border-emerald-500/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">Total Revenue</CardTitle>
@@ -383,7 +383,7 @@ export function Finance() {
             </CardTitle>
             <CardDescription className="text-[10px] font-medium text-muted-foreground mt-0.5">Historical Revenue vs Operational Expenditure</CardDescription>
           </div>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-4">
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-emerald-500" />
               <span className="text-[10px] font-bold text-muted-foreground uppercase">Revenue</span>
@@ -452,7 +452,7 @@ export function Finance() {
             </CardTitle>
             <CardDescription className="text-[10px] font-medium text-muted-foreground mt-0.5">Annual Trend of Revenue vs Expenses</CardDescription>
           </div>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-4">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-0.5 bg-emerald-500" />
               <span className="text-[10px] font-bold text-muted-foreground uppercase">Revenue</span>
@@ -515,9 +515,9 @@ export function Finance() {
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Profit & Loss Detailed Table */}
         <div className="flex-1 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h3 className="text-sm font-bold uppercase tracking-widest text-foreground">Profit & Loss Ledger</h3>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Dialog open={isManageCategoriesOpen} onOpenChange={setIsManageCategoriesOpen}>
                 <DialogTrigger render={
                   <Button variant="outline" className="h-7 gap-2 px-3 text-[10px] font-bold uppercase tracking-tight">
@@ -796,7 +796,51 @@ export function Finance() {
             </div>
           </div>
 
-          <div className="bg-background border border-border rounded-xl overflow-hidden mb-8">
+          {/* Mobile Card View */}
+          <div className="lg:hidden space-y-3 mb-8">
+            {sortedExpenses.map((e) => {
+              const linkedOrder = e.orderId ? orders.find(o => o.id === e.orderId) : null;
+              return (
+                <div key={e.id} className="bg-background border border-border rounded-xl p-4 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <Badge variant="outline" className="text-[9px] font-black uppercase bg-muted border-border text-muted-foreground mb-1">
+                        {e.category}
+                      </Badge>
+                      {linkedOrder && (
+                        <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-tighter">
+                          Order: {linkedOrder.orderNumber}
+                        </p>
+                      )}
+                      <p className="text-xs font-semibold text-foreground truncate">{e.description}</p>
+                    </div>
+                    <span className="shrink-0 text-sm font-black text-red-600">-₱{e.amount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-border pt-2">
+                    <span className="text-[10px] text-muted-foreground font-medium">
+                      {typeof e.date?.toDate === 'function' ? e.date.toDate().toLocaleDateString() : 'N/A'}
+                    </span>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted"
+                        onClick={() => { setEditingExpense(e); setIsEditExpenseOpen(true); }}>
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                        onClick={() => handleDeleteExpense(e.id)}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {expenses.length === 0 && (
+              <div className="text-center py-8 text-zinc-400 text-xs italic">No expense records found.</div>
+            )}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden lg:block bg-background border border-border rounded-xl overflow-hidden mb-8">
             <div className="overflow-x-auto w-full">
               <Table>
                 <TableHeader className="bg-muted/50">

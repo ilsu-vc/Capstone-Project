@@ -216,7 +216,77 @@ export function Inventory() {
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Mobile Card View */}
+      <div className="lg:hidden space-y-3">
+        {filteredProducts.map((p) => {
+          const totalStock = getStockCount(p.id);
+          const isLow = totalStock <= p.reorderPoint;
+          return (
+            <div
+              key={p.id}
+              className="bg-card border border-border rounded-xl p-4 cursor-pointer hover:border-foreground/20 transition-all"
+              onClick={() => { setSelectedProduct(p); setIsDetailOpen(true); }}
+            >
+              <div className="flex items-start justify-between gap-2 mb-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-foreground leading-tight">{p.name}</p>
+                  <p className="text-[10px] text-zinc-400 font-medium uppercase mt-0.5">{p.category}</p>
+                  <p className="text-[10px] font-mono text-zinc-500 mt-0.5">{p.sku}</p>
+                </div>
+                <Badge
+                  variant="outline"
+                  className={`shrink-0 h-6 font-bold text-[10px] ${isLow ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}
+                >
+                  {totalStock} units
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-black text-foreground">₱{p.basePrice.toLocaleString()}</span>
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  <Dialog>
+                    <DialogTrigger className="inline-flex items-center justify-center h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all">
+                      <QrCode className="w-4 h-4" />
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-xs text-center">
+                      <DialogHeader>
+                        <DialogTitle className="text-center">Asset QR Label</DialogTitle>
+                      </DialogHeader>
+                      <div className="flex flex-col items-center gap-4 py-8">
+                        <div className="p-4 bg-card border-2 border-primary rounded-2xl">
+                          <QRCodeSVG value={p.id} size={180} />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-black">{p.name}</p>
+                          <p className="text-xs font-mono text-muted-foreground">{p.sku}</p>
+                        </div>
+                      </div>
+                      <Button className="w-full gap-2" variant="outline" onClick={() => window.print()}>
+                        Print Label
+                      </Button>
+                    </DialogContent>
+                  </Dialog>
+                  {canAdjustStock && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      onClick={() => { setSelectedProduct(p); setIsStockUpdateOpen(true); }}
+                    >
+                      <Package className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        {filteredProducts.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground text-xs italic">No products found.</div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden lg:block bg-card border border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto w-full">
           <Table>
             <TableHeader className="bg-muted/50">

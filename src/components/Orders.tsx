@@ -395,7 +395,7 @@ export function Orders() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <h2 className="text-xl font-bold tracking-tight text-zinc-900">Service Request Queue (Orders)</h2>
         <Dialog open={isNewOrderOpen} onOpenChange={setIsNewOrderOpen}>
           <DialogTrigger className="h-9 gap-2 px-4 bg-[#1A2332] text-white rounded-lg inline-flex items-center justify-center font-medium transition-all hover:bg-[#1A2332]/90">
@@ -786,8 +786,7 @@ export function Orders() {
         </Dialog>
 
       </div>
-
-      <div className="flex items-center gap-2 bg-card p-3 border border-border rounded-xl">
+      <div className="flex items-center gap-2 bg-card p-3 border border-border rounded-xl">
         <ShoppingCart className="w-4 h-4 text-zinc-400 ml-1" />
         <Input 
           placeholder="Filter by Order #, or Client..." 
@@ -807,7 +806,79 @@ export function Orders() {
         )}
       </div>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Mobile Card View */}
+      <div className="lg:hidden space-y-3">
+        {filteredOrders.map(order => {
+          const deadlineDate = typeof order.deliveryDeadline?.toDate === 'function' ? order.deliveryDeadline.toDate() : null;
+          const isOverdue = deadlineDate && deadlineDate < new Date() && !['delivered', 'completed'].includes(order.status);
+          return (
+            <div key={order.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-xs font-mono text-zinc-400">{order.orderNumber}</p>
+                  <p className="text-sm font-bold text-zinc-900 mt-0.5">{order.clientName}</p>
+                  <p className="text-[10px] text-zinc-400 uppercase font-bold tracking-tighter">{order.deliveryRegion}</p>
+                </div>
+                <Badge variant="outline" className={`shrink-0 gap-1.5 h-6 capitalize text-[10px] font-bold ${
+                  order.status === 'delivered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                  order.status === 'out_for_delivery' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                  'bg-amber-50 text-amber-700 border-amber-200'
+                }`}>
+                  {getStatusIcon(order.status)}
+                  {order.status.replace('_', ' ')}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={`text-[10px] font-bold ${isOverdue ? 'text-red-500' : 'text-zinc-500'}`}>
+                    {deadlineDate ? deadlineDate.toLocaleDateString() : 'N/A'}
+                    {isOverdue && <span className="ml-1 uppercase text-[8px] animate-bounce bg-red-100 px-1 rounded">SLA Breach</span>}
+                  </p>
+                </div>
+                <span className="font-black text-sm">₱{order.totalAmount.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center justify-end gap-1 border-t border-border pt-2">
+                <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => handleViewDetails(order)} title="View Details">
+                  <Eye className="w-4 h-4" />
+                </Button>
+                {profile?.role !== 'agent' && (
+                  <>
+                    {order.status === 'pending' && (
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-zinc-400 hover:text-zinc-900" onClick={() => updateOrderStatus(order, 'preparing')}>
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {order.status === 'preparing' && (
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-blue-500 hover:bg-blue-50" onClick={() => updateOrderStatus(order, 'out_for_delivery')}>
+                        <Camera className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {order.status === 'out_for_delivery' && (
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-500 hover:bg-emerald-50" onClick={() => updateOrderStatus(order, 'delivered')}>
+                        <CheckCircle2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </>
+                )}
+                {order.photoValidationUrl && (
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-zinc-400 hover:text-zinc-900" onClick={() => window.open(order.photoValidationUrl)}>
+                     <FileText className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        {filteredOrders.length === 0 && (
+          <div className="flex flex-col items-center gap-2 py-12 text-zinc-400">
+            <ShoppingCart className="w-8 h-8 opacity-20" />
+            <p className="text-xs font-medium italic">No orders match your search criteria.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden lg:block bg-card border border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto w-full">
           <Table>
             <TableHeader className="bg-muted/50">

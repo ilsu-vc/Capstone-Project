@@ -169,7 +169,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex w-full overflow-x-hidden">
       <TutorialOverlay open={isTutorialOpen} onOpenChange={setIsTutorialOpen} />
 
       {/* Desktop Sidebar */}
@@ -178,7 +178,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${isCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${isCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
         {/* Top Header */}
         <header className="sticky top-0 z-40 flex items-center justify-between px-4 py-3 bg-background/90 backdrop-blur-md border-b border-border lg:px-8">
           {/* Mobile menu */}
@@ -203,7 +203,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-8">
+        <main className="flex-1 w-full min-w-0 p-4 lg:p-8 overflow-x-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
