@@ -28,7 +28,7 @@ import { useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import { handleSupabaseError, OperationType } from './lib/supabaseErrorHandler';
 
-function ProtectedRoute({ children, allowedRoles, fallbackPath = "/orders" }: { children: React.ReactNode, allowedRoles?: string[], fallbackPath?: string }) {
+function ProtectedRoute({ children, allowedRoles, fallbackPath = "/inventory" }: { children: React.ReactNode, allowedRoles?: string[], fallbackPath?: string }) {
   const { user, profile, loading } = useAuth();
   
   if (loading) return (
@@ -67,7 +67,7 @@ function AppContent() {
     if (user && profile) seedWarehouses();
   }, [user, profile]);
 
-  const defaultPath = profile?.role === 'admin' ? '/admin' : '/dashboard';
+  const defaultPath = profile?.role === 'admin' ? '/admin' : '/inventory';
 
   return (
     <Routes>
@@ -87,7 +87,7 @@ function AppContent() {
       <Route path="/onboarding" element={user ? <Navigate to={defaultPath} replace /> : <Onboarding />} />
       
       <Route path="/dashboard" element={
-        <ProtectedRoute allowedRoles={['admin', 'secretary', 'agent', 'staff']}>
+        <ProtectedRoute allowedRoles={['admin']}>
           <Dashboard />
         </ProtectedRoute>
       } />

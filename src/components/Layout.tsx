@@ -30,7 +30,7 @@ import { TutorialOverlay } from './TutorialOverlay';
 
 const navigation = [
   { name: 'Admin Panel', href: '/admin', icon: Shield, roles: ['admin'] },
-  { name: 'Dashboard', href: '/dashboard', icon: BarChart3, roles: ['admin', 'secretary'] },
+  { name: 'Dashboard', href: '/dashboard', icon: BarChart3, roles: ['admin'] },
   { name: 'Inventory', href: '/inventory', icon: Package, roles: ['admin', 'secretary', 'agent', 'staff'] },
   { name: 'Order Entry', href: '/orders', icon: ShoppingCart, roles: ['admin', 'secretary', 'agent', 'staff'] },
   { name: 'Transfers', href: '/transfers', icon: Truck, roles: ['admin', 'secretary'] },
