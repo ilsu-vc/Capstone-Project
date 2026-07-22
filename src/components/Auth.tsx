@@ -64,8 +64,18 @@ export function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
-      <Card className="w-full max-w-md relative z-10 shadow-2xl overflow-hidden border-border">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover z-0"
+      >
+        <source src="/0722.mp4" type="video/mp4" />
+      </video>
+      <div className="absolute inset-0 bg-background/10 z-0"></div>
+      <Card className="w-full max-w-md relative z-10 shadow-2xl overflow-hidden border-border bg-card/85 backdrop-blur-sm">
 
         
         <CardHeader className="text-center pb-2">
