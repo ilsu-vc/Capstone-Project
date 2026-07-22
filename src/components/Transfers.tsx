@@ -56,10 +56,14 @@ export function Transfers() {
   const handleInitiateTransfer = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const sourceWh = formData.get('sourceWh') as string;
-    const destWh = formData.get('destWh') as string;
-    const prodId = formData.get('productId') as string;
+    const sourceWhName = formData.get('sourceWh') as string;
+    const destWhName = formData.get('destWh') as string;
+    const prodName = formData.get('productId') as string;
     const qty = Number(formData.get('quantity'));
+
+    const sourceWh = warehouses.find(w => w.name === sourceWhName)?.id || sourceWhName;
+    const destWh = warehouses.find(w => w.name === destWhName)?.id || destWhName;
+    const prodId = products.find(p => p.name === prodName)?.id || prodName;
 
     if (sourceWh === destWh) {
       toast.error('Source and destination warehouses must be different');
@@ -148,7 +152,7 @@ export function Transfers() {
                     </SelectTrigger>
                     <SelectContent>
                       {warehouses.map(wh => (
-                        <SelectItem key={wh.id} value={wh.id}>{wh.name}</SelectItem>
+                        <SelectItem key={wh.id} value={wh.name}>{wh.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -161,7 +165,7 @@ export function Transfers() {
                     </SelectTrigger>
                     <SelectContent>
                       {warehouses.map(wh => (
-                        <SelectItem key={wh.id} value={wh.id}>{wh.name}</SelectItem>
+                        <SelectItem key={wh.id} value={wh.name}>{wh.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -175,7 +179,7 @@ export function Transfers() {
                   </SelectTrigger>
                   <SelectContent>
                     {products.map(p => (
-                      <SelectItem key={p.id} value={p.id}>{p.name} ({p.sku})</SelectItem>
+                      <SelectItem key={p.id} value={p.name}>{p.name} ({p.sku})</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -185,7 +189,7 @@ export function Transfers() {
                 <Input name="quantity" type="number" required min="1" defaultValue="1" />
               </div>
               <DialogFooter>
-                <Button type="submit" className="w-full">Initiate Pipeline Movement</Button>
+                <Button type="submit" className="w-full">Confirm</Button>
               </DialogFooter>
             </form>
           </DialogContent>
